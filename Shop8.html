@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shop8 - Secure & Cost-Optimized CIAM Portal</title>
+  <title>Shop8 - Online Shopping</title>
   
   <!-- CSS: Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -64,8 +64,8 @@
         <span>shop</span><span class="text-white bg-black/20 px-1 rounded ml-0.5">8</span>
       </div>
       <div class="text-xs text-slate-400 hidden sm:block">
-        <p class="font-semibold text-slate-300">8x8 & Descope Partner Integration</p>
-        <p class="font-light">Secure CIAM & Omnichannel Delivery</p>
+        <p class="font-semibold text-slate-300">Everything you need, delivered fast</p>
+        <p class="font-light">Trusted by thousands of shoppers</p>
       </div>
     </div>
 
@@ -74,7 +74,7 @@
       <!-- Connection Status indicator -->
       <div class="flex items-center gap-2">
         <span class="h-2.5 w-2.5 rounded-full" :class="isConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'"></span>
-        <span class="text-xs text-slate-300 font-medium" x-text="isConfigured ? 'Connected to Descope' : 'Configuration Required'"></span>
+        <span class="text-xs text-slate-300 font-medium" x-text="isConfigured ? 'Store Online' : 'Setup Required'"></span>
       </div>
       <button @click="showConfig = true" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded border border-slate-700 transition flex items-center gap-1.5">
         <i data-lucide="settings" class="h-3.5 w-3.5"></i> Settings
@@ -111,15 +111,15 @@
         <div class="flex border-b border-slate-200 gap-1 bg-white p-1 rounded-lg shadow-sm">
           <button @click="activeTab = 'auth'" class="flex-1 py-3 px-4 font-semibold text-sm rounded-md transition flex items-center justify-center gap-2"
                   :class="activeTab === 'auth' ? 'bg-brandRed text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'">
-            <i data-lucide="shield-check" class="h-4.5 w-4.5"></i> 1. Onboarding & Login
+            <i data-lucide="shield-check" class="h-4.5 w-4.5"></i> Sign In
           </button>
           <button @click="activeTab = 'shop'" class="flex-1 py-3 px-4 font-semibold text-sm rounded-md transition flex items-center justify-center gap-2"
                   :class="activeTab === 'shop' ? 'bg-brandRed text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'">
-            <i data-lucide="shopping-cart" class="h-4.5 w-4.5"></i> 2. Shop8 Store (MFA Checkout)
+            <i data-lucide="shopping-cart" class="h-4.5 w-4.5"></i> Shop
           </button>
           <button @click="activeTab = 'flash'" class="flex-1 py-3 px-4 font-semibold text-sm rounded-md transition flex items-center justify-center gap-2"
                   :class="activeTab === 'flash' ? 'bg-brandRed text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'">
-            <i data-lucide="zap" class="h-4.5 w-4.5"></i> 3. Flash Sale Bot Guard
+            <i data-lucide="zap" class="h-4.5 w-4.5"></i> Flash Sale
           </button>
         </div>
 
@@ -135,11 +135,11 @@
                 <div class="bg-white text-brandRed font-black text-2xl px-3 py-1 rounded">Shop8</div>
               </div>
               <div class="space-y-4">
-                <h2 class="text-3xl font-extrabold leading-tight tracking-tight">The Future of Secure E-Commerce Logins</h2>
-                <p class="text-red-100 text-sm font-light leading-relaxed">Experience next-generation passwordless access using Descope CIAM, backed by carrier-direct OTP delivery through the 8x8 Connect API network.</p>
+                <h2 class="text-3xl font-extrabold leading-tight tracking-tight">Shop Smarter, Shop Safer</h2>
+                <p class="text-red-100 text-sm font-light leading-relaxed">Sign in with just your phone number — no passwords to remember. Fast checkout, real deals, and your account protected every step of the way.</p>
               </div>
               <div class="text-xs text-red-200/70 border-t border-white/20 pt-4 flex items-center gap-2">
-                <i data-lucide="shield" class="h-4 w-4"></i> Fully compliant with Thailand PDPA and carrier regulations.
+                <i data-lucide="shield" class="h-4 w-4"></i> Your information is always kept safe and private.
               </div>
             </div>
 
@@ -155,27 +155,23 @@
                     <div class="h-16 w-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
                       <i data-lucide="user-check" class="h-8 w-8"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-800">Welcome<template x-if="userSession.fullName">, <span x-text="userSession.fullName"></span></template>!</h3>
-                    <p class="text-sm text-slate-500 mt-1">Authenticated user session retrieved via Descope JWT.</p>
-                    <div class="mt-4 bg-slate-50 p-4 rounded-lg text-left border border-slate-100 text-xs font-mono break-all space-y-1">
-                      <template x-if="userSession.fullName">
-                        <div>
-                          <p class="text-slate-400 font-bold">Full Name:</p>
-                          <p class="text-slate-700" x-text="userSession.fullName"></p>
-                        </div>
-                      </template>
-                      <p class="text-slate-400 font-bold mt-2">Email/Phone:</p>
+                    <h3 class="text-xl font-bold text-slate-800">
+                      <span x-text="userSession.fullName ? 'Welcome back, ' + userSession.fullName.split(' ')[0] + '!' : 'Welcome back!'"></span>
+                    </h3>
+                    <p class="text-sm text-slate-500 mt-1">Great to see you again.</p>
+                    <div class="mt-4 bg-slate-50 p-4 rounded-lg text-left border border-slate-100 text-xs space-y-1">
+                      <p class="text-slate-400 font-bold">Signed in as:</p>
                       <p class="text-slate-700" x-text="userSession.userLogin"></p>
                     </div>
                     <button @click="activeTab = 'shop'" class="mt-6 w-full py-3 bg-brandRed hover:bg-red-700 text-white font-bold rounded-lg text-sm transition shadow-md flex items-center justify-center gap-2">
                       <i data-lucide="shopping-bag" class="h-4 w-4"></i> Start Shopping
                     </button>
-                    <button @click="enrollPasskey()" x-show="!showPasskeyEnroll" class="mt-3 w-full py-2 border border-slate-300 hover:border-brandRed hover:text-brandRed text-slate-600 font-semibold rounded-lg text-sm transition flex items-center justify-center gap-2">
-                      <i data-lucide="fingerprint" class="h-4 w-4"></i> Enable Passkey (Biometric)
+                    <button @click="enrollPasskey()" x-show="!showPasskeyEnroll && !userSession.hasPasskey" class="mt-3 w-full py-2 border border-slate-300 hover:border-brandRed hover:text-brandRed text-slate-600 font-semibold rounded-lg text-sm transition flex items-center justify-center gap-2">
+                      <i data-lucide="fingerprint" class="h-4 w-4"></i> Turn On Fingerprint / Face Sign-In
                     </button>
                     <div id="descope-passkey-container" x-show="showPasskeyEnroll" x-cloak class="mt-4"></div>
                     <button @click="logoutUser()" class="mt-3 w-full py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-lg text-sm transition">
-                      Sign Out / Reset Flow
+                      Sign Out
                     </button>
                   </div>
 
@@ -196,9 +192,9 @@
         <div x-show="activeTab === 'shop'" x-cloak class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div class="border-b border-slate-100 pb-4 mb-6">
             <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-              <i data-lucide="store" class="text-brandRed"></i> Shop8 Premium Storefront
+              <i data-lucide="store" class="text-brandRed"></i> All Products
             </h2>
-            <p class="text-sm text-slate-500 mt-1">Add items to your cart. Transactions exceeding 10,000 THB trigger Descope's Step-Up SMS/Voice Verification flow.</p>
+            <p class="text-sm text-slate-500 mt-1">Add your favorite items to the cart and check out anytime.</p>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -253,7 +249,7 @@
               <!-- Item 3 (HIGH VALUE - TRIGGERS STEP-UP) -->
               <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between bg-white hover:border-slate-300 transition relative">
                 <div class="absolute top-2 right-2 bg-brandRed text-white text-[8px] uppercase font-black px-2 py-0.5 rounded-full shadow-sm z-10">
-                  Step-Up Required
+                  Extra Protection Included
                 </div>
                 <div class="h-40 w-full bg-slate-100 overflow-hidden flex items-center justify-center">
                   <img src="iphone_15_pro.jpg" alt="iPhone 15 Pro Max" class="h-full w-full object-cover">
@@ -262,7 +258,7 @@
                   <div>
                     <span class="bg-red-50 text-brandRed text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-full">Electronics</span>
                     <h3 class="font-bold text-sm text-slate-800 mt-2">Apple iPhone 15 Pro Max</h3>
-                    <p class="text-xs text-slate-500 mt-1 line-clamp-2">Premium titanium finish with advanced security and secure profiles.</p>
+                    <p class="text-xs text-slate-500 mt-1 line-clamp-2">Premium titanium finish with our best-in-class protection for high-value orders.</p>
                   </div>
                   <div>
                     <p class="text-lg font-black text-brandRed mt-3">48,900 THB</p>
@@ -320,15 +316,15 @@
                 </div>
                 
                 <!-- Rule indicator warning -->
-                <div x-show="getCartTotal() > 10000" x-cloak class="bg-red-50 text-brandRed text-[10px] p-2 rounded border border-red-100 flex items-center gap-1.5 font-bold animate-pulse">
+                <div x-show="getCartTotal() > 10000" x-cloak class="bg-red-50 text-brandRed text-[10px] p-2 rounded border border-red-100 flex items-center gap-1.5 font-bold">
                   <i data-lucide="shield-check" class="h-4 w-4 shrink-0"></i>
-                  <span>Checkout exceeds 10,000 THB. Step-up SMS OTP required.</span>
+                  <span>High-value order — we'll quickly confirm it's really you before shipping.</span>
                 </div>
-                
+
                 <button @click="checkoutCart()" class="w-full py-3 text-white text-xs font-bold rounded-lg transition shadow-md flex items-center justify-center gap-2"
                         :class="cart.length === 0 ? 'bg-slate-300 cursor-not-allowed shadow-none' : 'bg-brandRed hover:bg-red-700'"
                         :disabled="cart.length === 0">
-                  <i data-lucide="credit-card" class="h-4 w-4"></i> Checkout Order
+                  <i data-lucide="credit-card" class="h-4 w-4"></i> Proceed to Checkout
                 </button>
               </div>
             </div>
@@ -341,9 +337,9 @@
         <div x-show="activeTab === 'flash'" x-cloak class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div class="border-b border-slate-100 pb-4 mb-6">
             <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-              <i data-lucide="zap" class="text-brandRed"></i> Flash Sale Bot Defense
+              <i data-lucide="zap" class="text-brandRed"></i> Flash Sale
             </h2>
-            <p class="text-sm text-slate-500 mt-1">Simulate a high-concurrency Flash Sale. Choose whether to simulate a normal human browser or a malicious bot script to see how the Descope & 8x8 security gateway responds.</p>
+            <p class="text-sm text-slate-500 mt-1">Limited stock, limited time — grab it before it's gone. We keep bots out so real shoppers get a fair shot.</p>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -601,7 +597,7 @@
     <div class="bg-white rounded-xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
       <div class="bg-red-50 p-4 border-b border-red-100 flex items-center justify-between">
         <h3 class="font-bold text-brandRed flex items-center gap-2">
-          <i data-lucide="shield-check" class="h-5 w-5"></i> 8x8 Secure Step-Up Verification
+          <i data-lucide="shield-check" class="h-5 w-5"></i> Confirm It's You
         </h3>
         <button @click="cancelCheckout()" class="text-slate-400 hover:text-brandRed transition" title="Close">
           <i data-lucide="x" class="h-5 w-5"></i>
@@ -609,12 +605,7 @@
       </div>
 
       <div class="p-6 space-y-4 text-center">
-        <p class="text-sm text-slate-600">You are making a high-value purchase of <strong class="text-slate-800" x-text="` ${checkoutItem.price.toLocaleString()} THB`"></strong>. For security, we require you to verify your identity.</p>
-        
-        <!-- Step-up Verification Message -->
-        <div class="bg-slate-50 p-4 rounded-lg border border-slate-100 text-xs text-slate-500 mb-2">
-          An OTP code has been dispatched via **8x8 Connect API** to your registered phone number.
-        </div>
+        <p class="text-sm text-slate-600">This is a high-value order of <strong class="text-slate-800" x-text="` ${checkoutItem.price.toLocaleString()} THB`"></strong>. Please confirm it's really you before we ship it.</p>
 
         <!-- Descope Step-up Web Component container -->
         <div class="min-h-[150px] flex items-center justify-center">
@@ -628,6 +619,55 @@
     </div>
   </div>
 
+  <!-- POP-UP DELIVERY DETAILS MODAL -->
+  <div x-show="showAddressModal" x-cloak class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
+      <div class="bg-brandDark text-white p-4 flex items-center justify-between">
+        <h3 class="font-bold flex items-center gap-2">
+          <i data-lucide="truck" class="text-brandRed h-5 w-5"></i> Delivery Details
+        </h3>
+        <button @click="showAddressModal = false" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <p class="text-xs text-slate-500">Where should we send your order?</p>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold text-slate-700 uppercase">Delivery Address</label>
+          <textarea x-model="shippingInfo.address" rows="3" placeholder="House no., street, sub-district, district, province, postal code" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none"></textarea>
+        </div>
+        <div class="space-y-1">
+          <label class="block text-xs font-bold text-slate-700 uppercase">Phone Number</label>
+          <input type="tel" x-model="shippingInfo.phone" placeholder="08x-xxx-xxxx" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none">
+        </div>
+        <button @click="confirmAddress()" class="w-full py-3 bg-brandRed hover:bg-red-700 text-white font-bold rounded-lg text-sm transition mt-2 shadow flex items-center justify-center gap-2">
+          <i data-lucide="arrow-right" class="h-4.5 w-4.5"></i> Continue to Payment
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POP-UP PASSKEY OFFER (shown after a step-up SMS verification) -->
+  <div x-show="showPasskeyOffer" x-cloak class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full border border-slate-200 overflow-hidden text-center p-6">
+      <div class="h-14 w-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i data-lucide="check" class="h-7 w-7"></i>
+      </div>
+      <template x-if="!passkeyOfferStarted">
+        <div>
+          <h3 class="font-bold text-slate-800 text-lg">Order Confirmed!</h3>
+          <p class="text-sm text-slate-500 mt-2">Want to skip typing codes next time? Use your fingerprint or face to confirm big orders instantly.</p>
+          <button @click="startPasskeyOffer()" class="mt-5 w-full py-3 bg-brandRed hover:bg-red-700 text-white font-bold rounded-lg text-sm transition flex items-center justify-center gap-2">
+            <i data-lucide="fingerprint" class="h-4 w-4"></i> Turn It On
+          </button>
+          <button @click="skipPasskeyOffer()" class="mt-2 w-full py-2 text-slate-500 text-sm hover:text-slate-700">Maybe Later</button>
+        </div>
+      </template>
+      <div id="descope-passkey-offer-container" x-show="passkeyOfferStarted" x-cloak class="mt-2"></div>
+    </div>
+  </div>
+
   <script>
     function Shop8App() {
       return {
@@ -637,6 +677,9 @@
         showConfig: false,
         showStepUpModal: false,
         showPasskeyEnroll: false,
+        showAddressModal: false,
+        showPasskeyOffer: false,
+        passkeyOfferStarted: false,
         showMobileLogs: false,
         
         config: {
@@ -658,13 +701,18 @@
           isLoggedIn: false,
           userId: '',
           userLogin: '',
-          fullName: ''
+          fullName: '',
+          hasPasskey: false
         },
 
         // Checkout states
         checkoutItem: {
           name: '',
           price: 0
+        },
+        shippingInfo: {
+          address: '',
+          phone: ''
         },
 
         // Shopping Cart state
@@ -818,26 +866,48 @@
           this.mountDescopeComponent();
         },
 
+        mountPasskeyFlow(containerId, onDone) {
+          const container = document.getElementById(containerId);
+          if (!container) return;
+
+          container.innerHTML = `<descope-wc project-id="${this.config.projectId}" flow-id="add-passkeys"></descope-wc>`;
+
+          const wc = container.querySelector('descope-wc');
+          this.styleShadowElements(wc);
+
+          wc.addEventListener('success', () => {
+            this.userSession.hasPasskey = true;
+            container.innerHTML = '';
+            if (onDone) onDone();
+          });
+          wc.addEventListener('error', (e) => {
+            console.error('Passkey enrollment failed:', e.detail);
+          });
+        },
+
         enrollPasskey() {
           this.showPasskeyEnroll = true;
           setTimeout(() => {
-            const container = document.getElementById('descope-passkey-container');
-            if (!container) return;
-
-            container.innerHTML = `<descope-wc project-id="${this.config.projectId}" flow-id="add-passkeys"></descope-wc>`;
-
-            const wc = container.querySelector('descope-wc');
-            this.styleShadowElements(wc);
-
-            wc.addEventListener('success', () => {
-              alert('Passkey enrolled successfully! You can now approve high-value checkouts with biometrics.');
+            this.mountPasskeyFlow('descope-passkey-container', () => {
+              alert("You're all set! Next time you can confirm big orders with just your fingerprint or face.");
               this.showPasskeyEnroll = false;
-              container.innerHTML = '';
-            });
-            wc.addEventListener('error', (e) => {
-              console.error('Passkey enrollment failed:', e.detail);
             });
           }, 100);
+        },
+
+        startPasskeyOffer() {
+          this.passkeyOfferStarted = true;
+          setTimeout(() => {
+            this.mountPasskeyFlow('descope-passkey-offer-container', () => {
+              this.showPasskeyOffer = false;
+              this.passkeyOfferStarted = false;
+            });
+          }, 100);
+        },
+
+        skipPasskeyOffer() {
+          this.showPasskeyOffer = false;
+          this.passkeyOfferStarted = false;
         },
 
         // Shopping Cart Methods
@@ -865,6 +935,15 @@
 
         checkoutCart() {
           if (this.cart.length === 0) return;
+          this.showAddressModal = true;
+        },
+
+        confirmAddress() {
+          if (!this.shippingInfo.address.trim() || !this.shippingInfo.phone.trim()) {
+            alert('Please enter your delivery address and phone number to continue.');
+            return;
+          }
+          this.showAddressModal = false;
           const total = this.getCartTotal();
           this.triggerCheckout('Cart Checkout', total);
         },
@@ -893,9 +972,13 @@
               item: this.checkoutItem.name,
               amount: this.checkoutItem.price
             });
-            alert(`Identity Verified! Payment of ${this.checkoutItem.price.toLocaleString()} THB for ${this.checkoutItem.name} Authorized.`);
             this.cart = []; // Empty the cart on success
             this.showStepUpModal = false;
+            if (this.userSession.hasPasskey) {
+              alert(`Verified! Your order for ${this.checkoutItem.name} (${this.checkoutItem.price.toLocaleString()} THB) is confirmed.`);
+            } else {
+              setTimeout(() => { this.showPasskeyOffer = true; }, 200);
+            }
           });
           wc.addEventListener('error', (e) => {
             console.error('Step up verification failed:', e.detail);
@@ -917,7 +1000,7 @@
             setTimeout(() => this.mountStepUpComponent(), 100);
           } else {
             // Low value checkout succeeds instantly
-            alert(`Order Authorized! Purchased ${name} for ${price.toLocaleString()} THB successfully.`);
+            alert(`Order placed! Thanks for shopping with us — your order is on its way.`);
             this.cart = []; // Empty the cart on success
           }
         },
