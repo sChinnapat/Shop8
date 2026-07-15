@@ -750,13 +750,31 @@
           setTimeout(() => clearInterval(checkInterval), 4000);
         },
 
+        async logToSupabase(action, message, payload) {
+          if (!this.config.supabaseUrl || !this.config.supabaseAnonKey) return;
+          try {
+            await fetch(`${this.config.supabaseUrl}/rest/v1/api_logs`, {
+              method: 'POST',
+              headers: {
+                'apikey': this.config.supabaseAnonKey,
+                'Authorization': `Bearer ${this.config.supabaseAnonKey}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+              },
+              body: JSON.stringify({ service: 'descope', action, method: 'POST', message, payload })
+            });
+          } catch (err) {
+            console.error('Failed to write log to Supabase:', err);
+          }
+        },
+
         mountDescopeComponent() {
           // Mount main login flow
           const container = document.getElementById('descope-wc-container');
           if (!container) return;
 
           container.innerHTML = `<descope-wc project-id="${this.config.projectId}" flow-id="${this.config.flowId || 'sign-up-or-in'}"></descope-wc>`;
-          
+
           const wc = container.querySelector('descope-wc');
           this.styleShadowElements(wc);
 
@@ -766,6 +784,10 @@
             this.userSession.userId = e.detail.user.userId;
             this.userSession.userLogin = e.detail.user.email || e.detail.user.phone || 'Authenticated User';
             this.userSession.fullName = e.detail.user.name || '';
+            this.logToSupabase('LOGIN_SUCCESS', 'User signed up or logged in', {
+              userId: e.detail.user.userId,
+              loginId: this.userSession.userLogin
+            });
           });
 
           wc.addEventListener('error', (e) => {
@@ -866,6 +888,11 @@
             }
             // Strip OAuth callback params left over from the redirect
             if (window.location.search) history.replaceState(null, '', window.location.pathname);
+            this.logToSupabase('STEP_UP_SUCCESS', 'Step-up verification completed for high-value checkout', {
+              loginId: this.userSession.userLogin,
+              item: this.checkoutItem.name,
+              amount: this.checkoutItem.price
+            });
             alert(`Identity Verified! Payment of ${this.checkoutItem.price.toLocaleString()} THB for ${this.checkoutItem.name} Authorized.`);
             this.cart = []; // Empty the cart on success
             this.showStepUpModal = false;
