@@ -657,7 +657,16 @@
 
         <div class="space-y-1">
           <label class="block text-xs font-bold text-slate-700 uppercase">Phone Number</label>
-          <input type="tel" x-model="shippingInfo.phone" placeholder="08x-xxx-xxxx" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none">
+          <template x-if="userSession.phone && !showPhoneVerify">
+            <div class="flex items-center justify-between bg-emerald-50 border border-emerald-100 rounded px-3 py-2">
+              <span class="text-xs text-emerald-700 font-semibold flex items-center gap-1.5"><i data-lucide="check-circle" class="h-3.5 w-3.5"></i> <span x-text="userSession.phone"></span></span>
+              <button @click="mountPhoneVerify()" class="text-xs text-slate-500 hover:text-brandRed underline">Change</button>
+            </div>
+          </template>
+          <button @click="mountPhoneVerify()" x-show="!userSession.phone && !showPhoneVerify" class="w-full py-2 border border-slate-300 hover:border-brandRed hover:text-brandRed text-slate-600 font-semibold rounded-lg text-sm transition">
+            Verify Phone Number
+          </button>
+          <div id="descope-phone-container" x-show="showPhoneVerify" x-cloak></div>
         </div>
 
         <div class="space-y-1 pt-2 border-t border-slate-100">
@@ -713,6 +722,7 @@
         showProfileModal: false,
         profileContext: 'menu', // 'menu' or 'checkout'
         showPasswordSetup: false,
+        showPhoneVerify: false,
         showPasskeyOffer: false,
         passkeyOfferStarted: false,
         showMobileLogs: false,
@@ -737,6 +747,7 @@
           userId: '',
           userLogin: '',
           email: '',
+          phone: '',
           fullName: '',
           hasPasskey: false,
           hasPassword: false
@@ -873,7 +884,7 @@
               if (rows.length > 0) {
                 const c = rows[0];
                 if (c.address) this.shippingInfo.address = c.address;
-                if (c.phone) this.shippingInfo.phone = c.phone;
+                if (c.phone && !this.userSession.phone) this.userSession.phone = c.phone;
                 if (c.email && !this.userSession.email) this.profile.email = c.email;
                 this.userSession.hasPasskey = !!c.has_passkey;
                 this.userSession.hasPassword = !!c.has_password;
@@ -902,7 +913,7 @@
                 full_name: this.userSession.fullName,
                 email: this.userSession.email || this.profile.email,
                 address: this.shippingInfo.address,
-                phone: this.shippingInfo.phone,
+                phone: this.userSession.phone,
                 has_passkey: this.userSession.hasPasskey,
                 has_password: this.userSession.hasPassword,
                 updated_at: new Date().toISOString()
@@ -929,6 +940,7 @@
             this.userSession.userId = e.detail.user.userId;
             this.userSession.userLogin = e.detail.user.email || e.detail.user.phone || 'Authenticated User';
             this.userSession.email = e.detail.user.email || '';
+            this.userSession.phone = e.detail.user.phone || '';
             this.userSession.fullName = e.detail.user.name || '';
             this.loadCustomerProfile(e.detail.user.userId);
             this.logToSupabase('LOGIN_SUCCESS', 'User signed up or logged in', {
@@ -961,11 +973,13 @@
           this.userSession.userId = '';
           this.userSession.userLogin = '';
           this.userSession.email = '';
+          this.userSession.phone = '';
           this.userSession.fullName = '';
           this.userSession.hasPasskey = false;
           this.userSession.hasPassword = false;
           this.profile.email = '';
           this.showPasskeyEnroll = false;
+          this.showPhoneVerify = false;
           this.mountDescopeComponent();
         },
 
@@ -1043,7 +1057,7 @@
 
         isProfileComplete() {
           return this.hasEmail() && !!this.userSession.hasPassword &&
-                 !!this.shippingInfo.address.trim() && !!this.shippingInfo.phone.trim();
+                 !!this.shippingInfo.address.trim() && !!this.userSession.phone;
         },
 
         checkoutCart() {
@@ -1059,17 +1073,19 @@
         openProfile(context) {
           this.profileContext = context;
           this.showPasswordSetup = false;
+          this.showPhoneVerify = false;
           this.showProfileModal = true;
         },
 
         closeProfile() {
           this.showProfileModal = false;
           this.showPasswordSetup = false;
+          this.showPhoneVerify = false;
         },
 
         saveProfile() {
-          if (!this.hasEmail() || !this.shippingInfo.address.trim() || !this.shippingInfo.phone.trim()) {
-            alert('Please fill in your email, delivery address, and phone number.');
+          if (!this.hasEmail() || !this.shippingInfo.address.trim() || !this.userSession.phone) {
+            alert('Please fill in your email, delivery address, and verified phone number.');
             return;
           }
           if (!this.userSession.hasPassword) {
@@ -1108,6 +1124,31 @@
           }, 100);
         },
 
+        mountPhoneVerify() {
+          this.showPhoneVerify = true;
+          setTimeout(() => {
+            const container = document.getElementById('descope-phone-container');
+            if (!container) return;
+
+            container.innerHTML = `<descope-wc project-id="${this.config.projectId}" flow-id="verify-phone-strict"></descope-wc>`;
+
+            const wc = container.querySelector('descope-wc');
+            this.styleShadowElements(wc);
+
+            wc.addEventListener('success', (e) => {
+              if (e.detail && e.detail.user && e.detail.user.phone) {
+                this.userSession.phone = e.detail.user.phone;
+              }
+              this.showPhoneVerify = false;
+              container.innerHTML = '';
+              this.saveCustomerProfile();
+            });
+            wc.addEventListener('error', (e) => {
+              console.error('Phone verification failed:', e.detail);
+            });
+          }, 100);
+        },
+
         mountStepUpComponent() {
           const container = document.getElementById('descope-stepup-container');
           if (!container) return;
@@ -1124,6 +1165,7 @@
               this.userSession.userId = e.detail.user.userId;
               this.userSession.userLogin = e.detail.user.email || e.detail.user.phone || 'Authenticated User';
               this.userSession.email = e.detail.user.email || '';
+              this.userSession.phone = e.detail.user.phone || '';
               this.userSession.fullName = e.detail.user.name || '';
               this.loadCustomerProfile(e.detail.user.userId);
             }
