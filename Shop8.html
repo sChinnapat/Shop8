@@ -684,8 +684,24 @@
             this.tempConfig = { ...this.config };
           }
           
-          // Initialize Descope if credentials exist
-          if (this.isConfigured) {
+          // Initialize Descope if credentials exist.
+          // If we are returning from an OAuth redirect that was started inside
+          // the step-up modal, restore the checkout state and remount the
+          // step-up widget so the flow can finish — otherwise mount the
+          // normal login component.
+          const pendingStepUp = sessionStorage.getItem('shop8_stepup_pending');
+          const isOAuthReturn = window.location.search.includes('code=') || window.location.search.includes('descope');
+          if (this.isConfigured && pendingStepUp && isOAuthReturn) {
+            try {
+              const saved = JSON.parse(pendingStepUp);
+              this.cart = saved.cart || [];
+              this.checkoutItem = saved.checkoutItem || { name: '', price: 0 };
+            } catch (_) { /* corrupted state — fall through with defaults */ }
+            this.activeTab = 'shop';
+            this.showStepUpModal = true;
+            setTimeout(() => this.mountStepUpComponent(), 100);
+          } else if (this.isConfigured) {
+            sessionStorage.removeItem('shop8_stepup_pending');
             this.mountDescopeComponent();
           }
           
@@ -800,33 +816,47 @@
           this.triggerCheckout('Cart Checkout', total);
         },
 
+        mountStepUpComponent() {
+          const container = document.getElementById('descope-stepup-container');
+          if (!container) return;
+
+          container.innerHTML = `<descope-wc project-id="${this.config.projectId}" flow-id="step-up"></descope-wc>`;
+
+          const wc = container.querySelector('descope-wc');
+          this.styleShadowElements(wc);
+
+          wc.addEventListener('success', (e) => {
+            sessionStorage.removeItem('shop8_stepup_pending');
+            if (e.detail && e.detail.user) {
+              this.userSession.isLoggedIn = true;
+              this.userSession.userId = e.detail.user.userId;
+              this.userSession.userLogin = e.detail.user.email || e.detail.user.phone || 'Authenticated User';
+              this.userSession.fullName = e.detail.user.name || '';
+            }
+            // Strip OAuth callback params left over from the redirect
+            if (window.location.search) history.replaceState(null, '', window.location.pathname);
+            alert(`Identity Verified! Payment of ${this.checkoutItem.price.toLocaleString()} THB for ${this.checkoutItem.name} Authorized.`);
+            this.cart = []; // Empty the cart on success
+            this.showStepUpModal = false;
+          });
+          wc.addEventListener('error', (e) => {
+            console.error('Step up verification failed:', e.detail);
+          });
+        },
+
         triggerCheckout(name, price) {
           this.checkoutItem = { name, price };
-          
-          if (price > 10000) {
-            // High value checkout triggers step-up authentication modal
-            this.showStepUpModal = true;
-            
-            // Mount Step-up Descope widget dynamically
-            setTimeout(() => {
-              const container = document.getElementById('descope-stepup-container');
-              if (container) {
-                // Generates step-up flow using SMS-OTP in your Descope project configuration
-                container.innerHTML = `<descope-wc project-id="${this.config.projectId}" flow-id="step-up"></descope-wc>`;
-                
-                const wc = container.querySelector('descope-wc');
-                this.styleShadowElements(wc);
 
-                wc.addEventListener('success', (e) => {
-                  alert(`Identity Verified! Payment of ${this.checkoutItem.price.toLocaleString()} THB for ${this.checkoutItem.name} Authorized.`);
-                  this.cart = []; // Empty the cart on success
-                  this.showStepUpModal = false;
-                });
-                wc.addEventListener('error', (e) => {
-                  console.error('Step up verification failed:', e.detail);
-                });
-              }
-            }, 100);
+          if (price > 10000) {
+            // High value checkout triggers step-up authentication modal.
+            // Persist checkout state: OAuth options redirect the whole page,
+            // so we must be able to restore the modal + cart on return.
+            sessionStorage.setItem('shop8_stepup_pending', JSON.stringify({
+              cart: this.cart,
+              checkoutItem: this.checkoutItem
+            }));
+            this.showStepUpModal = true;
+            setTimeout(() => this.mountStepUpComponent(), 100);
           } else {
             // Low value checkout succeeds instantly
             alert(`Order Authorized! Purchased ${name} for ${price.toLocaleString()} THB successfully.`);
@@ -835,6 +865,7 @@
         },
 
         cancelCheckout() {
+          sessionStorage.removeItem('shop8_stepup_pending');
           this.showStepUpModal = false;
           this.checkoutItem = { name: '', price: 0 };
         },
