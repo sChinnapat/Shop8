@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shop8 - Secure & Cost-Optimized CIAM Portal</title>
+  
+  <!-- CSS: Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Icons: Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- JS Framework: Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <!-- Descope SDKs -->
+  <script src="https://descopecdn.com/npm/@descope/web-component@3.69.2/dist/index.js"></script>
+  <script src="https://descopecdn.com/npm/@descope/web-js-sdk@1.50.6/dist/index.umd.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brandRed: '#E51D24', // Official 8x8 Red
+            brandDark: '#131926', // Premium 8x8 Slate Dark
+            brandGray: '#1E293B',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    [x-cloak] { display: none !important; }
+    /* Custom scrollbar for logging panel */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #1e293b;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 3px;
+    }
+    /* Style overrides for the Descope Web Component */
+    descope-wc {
+      --descope-colors-primary-main: #E51D24 !important;
+      --descope-colors-primary-hover: #C3181E !important;
+      --descope-colors-primary-text: #ffffff !important;
+      width: 100%;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col font-sans" x-data="Shop8App()" x-init="initApp()">
+
+  <!-- HEADER NAVIGATION -->
+  <header class="bg-brandDark text-white px-6 py-4 flex items-center justify-between border-b border-slate-800 shadow-md">
+    <div class="flex items-center gap-3">
+      <!-- 8x8 stylized logo representation -->
+      <div class="bg-brandRed text-white font-extrabold text-xl px-3 py-1.5 rounded flex items-center justify-center tracking-tighter">
+        <span>shop</span><span class="text-white bg-black/20 px-1 rounded ml-0.5">8</span>
+      </div>
+      <div class="text-xs text-slate-400 hidden sm:block">
+        <p class="font-semibold text-slate-300">8x8 & Descope Partner Integration</p>
+        <p class="font-light">Secure CIAM & Omnichannel Delivery</p>
+      </div>
+    </div>
+
+    <!-- Configuration Trigger -->
+    <div class="flex items-center gap-4">
+      <!-- Connection Status indicator -->
+      <div class="flex items-center gap-2">
+        <span class="h-2.5 w-2.5 rounded-full" :class="isConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'"></span>
+        <span class="text-xs text-slate-300 font-medium" x-text="isConfigured ? 'Connected to Descope' : 'Configuration Required'"></span>
+      </div>
+      <button @click="showConfig = true" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded border border-slate-700 transition flex items-center gap-1.5">
+        <i data-lucide="settings" class="h-3.5 w-3.5"></i> Settings
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="flex-1 flex flex-col lg:flex-row min-h-0">
+    
+    <!-- LEFT SIDE: ACTIVE DEMO INTERFACE (70% width) -->
+    <section class="flex-1 p-6 lg:p-8 overflow-y-auto">
+      
+      <!-- CONFIGURATION NOTICE (If Project ID is missing) -->
+      <template x-if="!isConfigured">
+        <div class="bg-amber-50 border-l-4 border-amber-500 p-5 rounded shadow-sm mb-6">
+          <div class="flex items-start gap-3">
+            <i data-lucide="alert-triangle" class="text-amber-500 h-6 w-6 shrink-0 mt-0.5"></i>
+            <div>
+              <h3 class="font-bold text-amber-900 text-lg">Setup Descope Credentials</h3>
+              <p class="text-amber-700 text-sm mt-1">To run the live build, you must link your Descope Project ID. Click the settings button below to input your Project ID and Flow ID.</p>
+              <button @click="showConfig = true" class="mt-3 bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs px-4 py-2 rounded transition shadow-sm">
+                Configure Credentials Now
+              </button>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- DEMO CONTENT TABS (Only shown if configured) -->
+      <div x-show="isConfigured" class="space-y-6">
+        
+        <!-- TOP TABS FOR DEMO FLOW STAGES -->
+        <div class="flex border-b border-slate-200 gap-1 bg-white p-1 rounded-lg shadow-sm">
+          <button @click="activeTab = 'auth'" class="flex-1 py-3 px-4 font-semibold text-sm rounded-md transition flex items-center justify-center gap-2"
+                  :class="activeTab === 'auth' ? 'bg-brandRed text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'">
+            <i data-lucide="shield-check" class="h-4.5 w-4.5"></i> 1. Onboarding & Login
+          </button>
+          <button @click="activeTab = 'shop'" class="flex-1 py-3 px-4 font-semibold text-sm rounded-md transition flex items-center justify-center gap-2"
+                  :class="activeTab === 'shop' ? 'bg-brandRed text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'">
+            <i data-lucide="shopping-cart" class="h-4.5 w-4.5"></i> 2. Shop8 Store (MFA Checkout)
+          </button>
+          <button @click="activeTab = 'flash'" class="flex-1 py-3 px-4 font-semibold text-sm rounded-md transition flex items-center justify-center gap-2"
+                  :class="activeTab === 'flash' ? 'bg-brandRed text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'">
+            <i data-lucide="zap" class="h-4.5 w-4.5"></i> 3. Flash Sale Bot Guard
+          </button>
+        </div>
+
+        <!-- TAB 1: ONBOARDING & LOGIN CLONE (Shopee Web Mock Layout) -->
+        <div x-show="activeTab === 'auth'" x-cloak class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          
+          <!-- Outer Grid: Shopee layout representation -->
+          <div class="grid grid-cols-1 md:grid-cols-12">
+            
+            <!-- Left Banner (Corporate red theme) -->
+            <div class="md:col-span-5 bg-brandRed p-8 flex flex-col justify-between text-white min-h-[300px] md:min-h-[450px]">
+              <div class="flex items-center gap-2">
+                <div class="bg-white text-brandRed font-black text-2xl px-3 py-1 rounded">Shop8</div>
+              </div>
+              <div class="space-y-4">
+                <h2 class="text-3xl font-extrabold leading-tight tracking-tight">The Future of Secure E-Commerce Logins</h2>
+                <p class="text-red-100 text-sm font-light leading-relaxed">Experience next-generation passwordless access using Descope CIAM, backed by carrier-direct OTP delivery through the 8x8 Connect API network.</p>
+              </div>
+              <div class="text-xs text-red-200/70 border-t border-white/20 pt-4 flex items-center gap-2">
+                <i data-lucide="shield" class="h-4 w-4"></i> Fully compliant with Thailand PDPA and carrier regulations.
+              </div>
+            </div>
+
+            <!-- Right Login Form Wrapper -->
+            <div class="md:col-span-7 p-8 flex flex-col justify-center bg-slate-50/50">
+              
+              <!-- DESCOPE FLOW ELEMENT WIDGET -->
+              <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-md max-w-md mx-auto w-full relative">
+                
+                <!-- Descope Custom Element -->
+                <div class="min-h-[350px] flex flex-col justify-center">
+                  <div class="text-center mb-6" x-show="userSession.isLoggedIn">
+                    <div class="h-16 w-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <i data-lucide="user-check" class="h-8 w-8"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800">Welcome to Shop8!</h3>
+                    <p class="text-sm text-slate-500 mt-1">Authenticated user session retrieved via Descope JWT.</p>
+                    <div class="mt-4 bg-slate-50 p-4 rounded-lg text-left border border-slate-100 text-xs font-mono break-all space-y-1">
+                      <p class="text-slate-400 font-bold">User UID:</p>
+                      <p class="text-slate-700" x-text="userSession.userId"></p>
+                      <p class="text-slate-400 font-bold mt-2">Email/Phone:</p>
+                      <p class="text-slate-700" x-text="userSession.userLogin"></p>
+                    </div>
+                    <button @click="logoutUser()" class="mt-6 w-full py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-lg text-sm transition">
+                      Sign Out / Reset Flow
+                    </button>
+                  </div>
+
+                  <!-- The actual Descope web component (shown if logged out) -->
+                  <div x-show="!userSession.isLoggedIn">
+                    <!-- Configured dynamically based on settings -->
+                    <div id="descope-wc-container"></div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: SHOP STOREFRONT (Step-Up Checkout Demo) -->
+        <div x-show="activeTab === 'shop'" x-cloak class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div class="border-b border-slate-100 pb-4 mb-6">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+              <i data-lucide="store" class="text-brandRed"></i> Shop8 Premium Storefront
+            </h2>
+            <p class="text-sm text-slate-500 mt-1">Add items to your cart. Transactions exceeding 10,000 THB trigger Descope's Step-Up SMS/Voice Verification flow.</p>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Side: Product Grid (8 cols) -->
+            <div class="lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+              
+              <!-- Item 1 (Low Value) -->
+              <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between bg-white hover:border-slate-300 transition">
+                <div class="h-40 w-full bg-slate-100 overflow-hidden flex items-center justify-center">
+                  <img src="wireless_mouse.jpg" alt="Shop8 Wireless Mouse" class="h-full w-full object-cover">
+                </div>
+                <div class="p-4 flex-1 flex flex-col justify-between">
+                  <div>
+                    <span class="bg-slate-100 text-slate-800 text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-full">Accessories</span>
+                    <h3 class="font-bold text-sm text-slate-800 mt-2">Shop8 Ergonomic Wireless Mouse</h3>
+                    <p class="text-xs text-slate-500 mt-1 line-clamp-2">High precision silent mouse with customizable DPI.</p>
+                  </div>
+                  <div>
+                    <p class="text-lg font-black text-brandRed mt-3">890 THB</p>
+                  </div>
+                </div>
+                <div class="p-4 bg-slate-50 border-t border-slate-100">
+                  <button @click="addToCart('Wireless Mouse', 890, 'wireless_mouse.jpg')" class="w-full bg-brandDark hover:bg-slate-800 text-white text-xs font-bold py-2 rounded-md transition flex items-center justify-center gap-1.5">
+                    <i data-lucide="shopping-cart" class="h-3.5 w-3.5"></i> Add To Cart
+                  </button>
+                </div>
+              </div>
+
+              <!-- Item 2 (Medium Value) -->
+              <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between bg-white hover:border-slate-300 transition">
+                <div class="h-40 w-full bg-slate-100 overflow-hidden flex items-center justify-center">
+                  <img src="vip_gold_card.jpg" alt="Shop8 VIP Card" class="h-full w-full object-cover">
+                </div>
+                <div class="p-4 flex-1 flex flex-col justify-between">
+                  <div>
+                    <span class="bg-slate-100 text-slate-800 text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-full">Memberships</span>
+                    <h3 class="font-bold text-sm text-slate-800 mt-2">Shop8 Gold VIP Annual Pass</h3>
+                    <p class="text-xs text-slate-500 mt-1 line-clamp-2">Unlocks free express shipping and double points.</p>
+                  </div>
+                  <div>
+                    <p class="text-lg font-black text-brandRed mt-3">4,900 THB</p>
+                  </div>
+                </div>
+                <div class="p-4 bg-slate-50 border-t border-slate-100">
+                  <button @click="addToCart('Gold VIP Pass', 4900, 'vip_gold_card.jpg')" class="w-full bg-brandDark hover:bg-slate-800 text-white text-xs font-bold py-2 rounded-md transition flex items-center justify-center gap-1.5">
+                    <i data-lucide="shopping-cart" class="h-3.5 w-3.5"></i> Add To Cart
+                  </button>
+                </div>
+              </div>
+
+              <!-- Item 3 (HIGH VALUE - TRIGGERS STEP-UP) -->
+              <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between bg-white hover:border-slate-300 transition relative">
+                <div class="absolute top-2 right-2 bg-brandRed text-white text-[8px] uppercase font-black px-2 py-0.5 rounded-full shadow-sm z-10">
+                  Step-Up Required
+                </div>
+                <div class="h-40 w-full bg-slate-100 overflow-hidden flex items-center justify-center">
+                  <img src="iphone_15_pro.jpg" alt="iPhone 15 Pro Max" class="h-full w-full object-cover">
+                </div>
+                <div class="p-4 flex-1 flex flex-col justify-between">
+                  <div>
+                    <span class="bg-red-50 text-brandRed text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-full">Electronics</span>
+                    <h3 class="font-bold text-sm text-slate-800 mt-2">Apple iPhone 15 Pro Max</h3>
+                    <p class="text-xs text-slate-500 mt-1 line-clamp-2">Premium titanium finish with advanced security and secure profiles.</p>
+                  </div>
+                  <div>
+                    <p class="text-lg font-black text-brandRed mt-3">48,900 THB</p>
+                  </div>
+                </div>
+                <div class="p-4 bg-red-50/50 border-t border-slate-100">
+                  <button @click="addToCart('iPhone 15 Pro Max', 48900, 'iphone_15_pro.jpg')" class="w-full bg-brandRed hover:bg-red-700 text-white text-xs font-bold py-2 rounded-md transition flex items-center justify-center gap-1.5">
+                    <i data-lucide="shopping-cart" class="h-3.5 w-3.5"></i> Add To Cart
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Right Side: Shopping Cart Summary (4 cols) -->
+            <div class="lg:col-span-4 bg-slate-50 p-5 rounded-xl border border-slate-200 flex flex-col justify-between min-h-[300px]">
+              <div>
+                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5 border-b border-slate-200 pb-3 mb-4">
+                  <i data-lucide="shopping-bag" class="text-brandRed"></i> Shopping Cart
+                </h3>
+                
+                <!-- Cart items list -->
+                <div class="space-y-3 overflow-y-auto max-h-[220px] pr-1 custom-scrollbar">
+                  <template x-if="cart.length === 0">
+                    <div class="text-center py-10 text-slate-400 text-xs">
+                      <i data-lucide="shopping-cart" class="h-8 w-8 mx-auto mb-2 text-slate-300"></i>
+                      Your cart is empty. Add items from the shop.
+                    </div>
+                  </template>
+                  
+                  <template x-for="(item, index) in cart" :key="index">
+                    <div class="flex items-center gap-3 bg-white p-2 rounded-lg border border-slate-100 relative">
+                      <img :src="item.img" class="h-10 w-10 object-cover rounded bg-slate-100 shrink-0">
+                      <div class="min-w-0 flex-1">
+                        <h4 class="font-bold text-xs text-slate-800 truncate" x-text="item.name"></h4>
+                        <p class="text-[10px] text-slate-500" x-text="`${item.price.toLocaleString()} THB`"></p>
+                      </div>
+                      
+                      <!-- Quantity selector -->
+                      <div class="flex items-center gap-1.5">
+                        <button @click="updateQty(index, -1)" class="h-5 w-5 bg-slate-100 rounded text-slate-600 hover:bg-slate-200 flex items-center justify-center font-bold text-xs">-</button>
+                        <span class="text-xs font-bold w-4 text-center text-slate-700" x-text="item.qty"></span>
+                        <button @click="updateQty(index, 1)" class="h-5 w-5 bg-slate-100 rounded text-slate-600 hover:bg-slate-200 flex items-center justify-center font-bold text-xs">+</button>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Cart total and actions -->
+              <div class="border-t border-slate-200 pt-4 mt-4 space-y-4">
+                <div class="flex justify-between items-center text-sm">
+                  <span class="text-slate-500 font-medium">Total:</span>
+                  <span class="font-black text-brandRed text-lg" x-text="`${getCartTotal().toLocaleString()} THB`"></span>
+                </div>
+                
+                <!-- Rule indicator warning -->
+                <div x-show="getCartTotal() > 10000" x-cloak class="bg-red-50 text-brandRed text-[10px] p-2 rounded border border-red-100 flex items-center gap-1.5 font-bold animate-pulse">
+                  <i data-lucide="shield-check" class="h-4 w-4 shrink-0"></i>
+                  <span>Checkout exceeds 10,000 THB. Step-up SMS OTP required.</span>
+                </div>
+                
+                <button @click="checkoutCart()" class="w-full py-3 text-white text-xs font-bold rounded-lg transition shadow-md flex items-center justify-center gap-2"
+                        :class="cart.length === 0 ? 'bg-slate-300 cursor-not-allowed shadow-none' : 'bg-brandRed hover:bg-red-700'"
+                        :disabled="cart.length === 0">
+                  <i data-lucide="credit-card" class="h-4 w-4"></i> Checkout Order
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        </div>
+
+        <!-- TAB 3: FLASH SALE BOT GUARD (Arkose/reCAPTCHA Simulation) -->
+        <div x-show="activeTab === 'flash'" x-cloak class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div class="border-b border-slate-100 pb-4 mb-6">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+              <i data-lucide="zap" class="text-brandRed"></i> Flash Sale Bot Defense
+            </h2>
+            <p class="text-sm text-slate-500 mt-1">Simulate a high-concurrency Flash Sale. Choose whether to simulate a normal human browser or a malicious bot script to see how the Descope & 8x8 security gateway responds.</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Left Controls -->
+            <div class="space-y-6">
+              <div class="bg-slate-50 p-5 rounded-xl border border-slate-100 space-y-4">
+                <h3 class="font-bold text-slate-800 text-sm">Select Buyer Simulation Mode</h3>
+                
+                <div class="grid grid-cols-2 gap-3">
+                  <button @click="botSimMode = 'human'" class="py-3 px-4 rounded-lg border text-sm font-bold transition flex flex-col items-center gap-2 text-center"
+                          :class="botSimMode === 'human' ? 'border-brandRed bg-red-50 text-brandRed' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'">
+                    <i data-lucide="user" class="h-6 w-6"></i>
+                    <span>Real Human User</span>
+                  </button>
+                  <button @click="botSimMode = 'bot'" class="py-3 px-4 rounded-lg border text-sm font-bold transition flex flex-col items-center gap-2 text-center"
+                          :class="botSimMode === 'bot' ? 'border-brandRed bg-red-50 text-brandRed' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'">
+                    <i data-lucide="bot" class="h-6 w-6"></i>
+                    <span>Automated Script</span>
+                  </button>
+                </div>
+
+                <div class="text-xs text-slate-500 leading-relaxed pt-2">
+                  <p x-show="botSimMode === 'human'"><strong class="text-slate-700">Human Mode:</strong> Google reCAPTCHA computes a clean Risk Score (e.g. 0.9). Descope bypasses any verification screens and allows checkout instantly.</p>
+                  <p x-show="botSimMode === 'bot'"><strong class="text-slate-700">Bot Mode:</strong> Telemetry detects head-less browser flags. Descope flags the request and forces a **strict SMS OTP challenge** via 8x8 to prove the user has a real, physical SIM card.</p>
+                </div>
+              </div>
+
+              <div class="border border-slate-100 rounded-xl overflow-hidden bg-slate-900 text-white p-5 flex items-center justify-between shadow">
+                <div class="flex items-center gap-3">
+                  <div class="bg-brandRed text-white p-3 rounded-lg animate-pulse">
+                    <i data-lucide="zap" class="h-6 w-6"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-black text-lg">iPhone 15 Pro Max @ 8 THB!</h4>
+                    <p class="text-xs text-slate-400">Limited to 1 unit. Campaign live right now.</p>
+                  </div>
+                </div>
+                <button @click="runFlashSaleSim()" class="bg-brandRed hover:bg-red-700 text-white font-bold text-sm px-6 py-3 rounded-lg shadow-md transition shrink-0">
+                  Buy Now
+                </button>
+              </div>
+            </div>
+
+            <!-- Right Results Screen -->
+            <div class="border border-slate-200 rounded-xl p-6 bg-slate-50/50 flex flex-col justify-between min-h-[300px]">
+              <div>
+                <h3 class="font-bold text-slate-800 text-sm">Security Gateway Decision Screen</h3>
+                <p class="text-xs text-slate-500 mt-1">Real-time risk scoring evaluation via Descope flow rules:</p>
+              </div>
+
+              <!-- Simulation Output Area -->
+              <div class="flex-1 flex flex-col justify-center items-center py-6">
+                <!-- Idle State -->
+                <div x-show="!flashSimState" class="text-center text-slate-400">
+                  <i data-lucide="play" class="h-12 w-12 mx-auto mb-2 text-slate-300"></i>
+                  <p class="text-sm font-medium">Click "Buy Now" to run simulation</p>
+                </div>
+
+                <!-- Processing state -->
+                <div x-show="flashSimState === 'running'" class="text-center">
+                  <div class="h-10 w-10 border-4 border-brandRed border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                  <p class="text-sm font-bold text-slate-700">Evaluating client telemetry...</p>
+                  <p class="text-xs text-slate-400 mt-1">Analyzing mouse inputs & headers</p>
+                </div>
+
+                <!-- Human Success state -->
+                <div x-show="flashSimState === 'human_success'" x-cloak class="text-center">
+                  <div class="h-14 w-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i data-lucide="check" class="h-8 w-8"></i>
+                  </div>
+                  <h4 class="font-bold text-emerald-800 text-lg">Purchase Order Created!</h4>
+                  <p class="text-xs text-slate-600 mt-1">reCAPTCHA Score: <span class="font-bold">0.95 (Low Risk)</span></p>
+                  <span class="mt-3 inline-block bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded">Bypassed Verification</span>
+                </div>
+
+                <!-- Bot Intercepted state -->
+                <div x-show="flashSimState === 'bot_intercept'" x-cloak class="text-center max-w-sm">
+                  <div class="h-14 w-14 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i data-lucide="shield-alert" class="h-8 w-8"></i>
+                  </div>
+                  <h4 class="font-bold text-amber-800 text-lg">Suspicious Access Blocked</h4>
+                  <p class="text-xs text-slate-600 mt-1">reCAPTCHA Score: <span class="font-bold">0.12 (High Risk / Bot)</span></p>
+                  <p class="text-xs text-amber-700 mt-2">Descope Flow automatically intercepted the script and triggered a **Step-up SMS OTP via 8x8** to verify physical SIM ownership.</p>
+                </div>
+              </div>
+
+              <div class="border-t border-slate-200 pt-4 flex items-center justify-between text-xs text-slate-500">
+                <span>Integrated Services:</span>
+                <span class="font-semibold text-slate-700 flex items-center gap-1">
+                  <span class="h-2 w-2 rounded-full bg-emerald-500"></span> Google reCAPTCHA Enterprise
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- RIGHT SIDE: REAL-TIME API CONSOLE LOGS (30% width / Sliding drawer on mobile) -->
+    <div x-show="showMobileLogs" @click="showMobileLogs = false" x-cloak class="fixed inset-0 bg-black/60 backdrop-blur-xs z-30 lg:hidden" x-transition.opacity></div>
+
+    <aside class="fixed lg:static inset-y-0 right-0 z-40 w-80 lg:w-[400px] bg-slate-900 border-l border-slate-800 flex flex-col text-slate-200 transition-transform duration-300 transform lg:translate-x-0"
+           :class="showMobileLogs ? 'translate-x-0 shadow-2xl' : 'translate-x-full lg:translate-x-0'">
+      
+      <!-- Console Header -->
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between shrink-0 bg-slate-950">
+        <div class="flex items-center gap-2 min-w-0">
+          <button @click="showMobileLogs = false" class="lg:hidden text-slate-400 hover:text-white mr-1 shrink-0">
+            <i data-lucide="x" class="h-5 w-5"></i>
+          </button>
+          <div class="h-2.5 w-2.5 rounded-full bg-red-500 animate-ping shrink-0"></div>
+          <h2 class="font-bold text-xs lg:text-sm tracking-wide text-white uppercase truncate">Real-Time API Logs</h2>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button @click="clearConsoleLogs()" class="text-[9px] lg:text-[10px] bg-slate-800 hover:bg-slate-700 hover:text-white text-slate-400 px-2 py-1 rounded transition border border-slate-700">
+            Clear
+          </button>
+          <button @click="fetchLogs()" class="text-[9px] lg:text-[10px] bg-brandRed hover:bg-red-700 text-white px-2 py-1 rounded transition flex items-center gap-1 font-semibold">
+            <i data-lucide="refresh-cw" class="h-3 w-3"></i> Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- Logs List (Scrollable) -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-slate-900/50">
+        
+        <template x-if="apiLogs.length === 0">
+          <div class="h-full flex flex-col items-center justify-center text-slate-500 text-center py-20">
+            <i data-lucide="terminal" class="h-10 w-10 text-slate-700 mb-2"></i>
+            <p class="text-xs">No transactions recorded yet.</p>
+            <p class="text-[10px] text-slate-600 mt-1 max-w-[200px]">Perform login, checkout, or signup OTP triggers to view payloads.</p>
+          </div>
+        </template>
+
+        <template x-for="(log, index) in apiLogs" :key="log.id">
+          <div class="bg-slate-950 border border-slate-800 rounded-lg overflow-hidden text-xs shadow-md">
+            
+            <!-- Log header accordion toggle -->
+            <div @click="toggleLog(log.id)" class="p-3 flex items-center justify-between cursor-pointer hover:bg-slate-900 transition border-b border-slate-900">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded shrink-0"
+                      :class="log.action.includes('FAILURE') ? 'bg-red-950 text-red-400 border border-red-900' : 'bg-slate-800 text-slate-300 border border-slate-700'">
+                  POST
+                </span>
+                <span class="font-bold text-slate-300 truncate" x-text="log.action"></span>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="text-[10px] text-slate-500" x-text="formatTime(log.created_at)"></span>
+                <i data-lucide="chevron-down" class="h-3.5 w-3.5 text-slate-500 transition-transform" :class="expandedLogs.includes(log.id) ? 'rotate-180' : ''"></i>
+              </div>
+            </div>
+
+            <!-- Log expanded payload details -->
+            <div x-show="expandedLogs.includes(log.id)" x-transition class="p-3 bg-slate-950/70 space-y-3 font-mono text-[10px]">
+              
+              <!-- Info statement -->
+              <div class="text-slate-400 pb-2 border-b border-slate-900" x-text="log.message"></div>
+              
+              <!-- Descope received body -->
+              <div class="space-y-1">
+                <p class="text-amber-500 font-bold">← Webhook Received (from Descope):</p>
+                <pre class="bg-slate-900 p-2 rounded text-slate-300 overflow-x-auto custom-scrollbar" x-text="JSON.stringify(log.payload.descope_received || log.payload.descope_payload || log.payload, null, 2)"></pre>
+              </div>
+
+              <!-- 8x8 API Dispatch details (If present) -->
+              <template x-if="log.payload.request_to_8x8">
+                <div class="space-y-3 pt-2 border-t border-slate-900">
+                  <div class="space-y-1">
+                    <p class="text-brandRed font-bold">→ 8x8 Request Payload (REST POST):</p>
+                    <pre class="bg-slate-900 p-2 rounded text-slate-300 overflow-x-auto custom-scrollbar" x-text="JSON.stringify(log.payload.request_to_8x8, null, 2)"></pre>
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-emerald-500 font-bold">← 8x8 Network Response:</p>
+                    <pre class="bg-slate-900 p-2 rounded text-slate-300 overflow-x-auto custom-scrollbar" x-text="JSON.stringify(log.payload.response_from_8x8, null, 2)"></pre>
+                  </div>
+                </div>
+              </template>
+
+            </div>
+
+          </div>
+        </template>
+
+      </div>
+
+      <!-- Real-time indicator bar -->
+      <div class="p-3 bg-slate-950 border-t border-slate-800 text-[10px] text-slate-500 flex items-center justify-between shrink-0">
+        <span class="flex items-center gap-1.5">
+          <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          Polling database interval active (1.5s)
+        </span>
+        <span x-text="`Total logs: ${apiLogs.length}`"></span>
+      </div>
+
+    </aside>
+
+  </main>
+
+  <!-- FLOATING CONSOLE TOGGLE BUTTON FOR MOBILE -->
+  <button @click="showMobileLogs = !showMobileLogs" class="lg:hidden fixed bottom-6 right-6 bg-brandRed text-white p-4 rounded-full shadow-lg z-30 flex items-center justify-center border border-red-500 hover:bg-red-700 transition">
+    <i data-lucide="terminal" class="h-6 w-6"></i>
+  </button>
+
+  <!-- POP-UP CONFIGURATION MODAL -->
+  <div x-show="showConfig" x-cloak class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden" @click.away="showConfig = false">
+      <div class="bg-brandDark text-white p-4 flex items-center justify-between">
+        <h3 class="font-bold flex items-center gap-2">
+          <i data-lucide="settings" class="text-brandRed"></i> Shop8 Configuration Credentials
+        </h3>
+        <button @click="showConfig = false" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <!-- Project ID input -->
+        <div class="space-y-1">
+          <label class="block text-xs font-bold text-slate-700 uppercase">Descope Project ID</label>
+          <input type="text" x-model="tempConfig.projectId" placeholder="e.g. P2X..." class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none">
+          <span class="text-[10px] text-slate-400">Retrieved from Project Settings in Descope Console.</span>
+        </div>
+
+        <!-- Flow ID input -->
+        <div class="space-y-1">
+          <label class="block text-xs font-bold text-slate-700 uppercase">Descope Flow ID</label>
+          <input type="text" x-model="tempConfig.flowId" placeholder="e.g. sign-up-or-in" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none">
+          <span class="text-[10px] text-slate-400">Defaults to your main login flow.</span>
+        </div>
+
+        <!-- Supabase Project credentials for logs polling -->
+        <div class="border-t border-slate-100 pt-4 space-y-4">
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-slate-700 uppercase">Supabase REST URL</label>
+            <input type="text" x-model="tempConfig.supabaseUrl" placeholder="https://xxxx.supabase.co" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-slate-700 uppercase">Supabase Anon Key</label>
+            <input type="password" x-model="tempConfig.supabaseAnonKey" placeholder="eyJhbG..." class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none">
+          </div>
+        </div>
+
+        <!-- Save Button -->
+        <button @click="saveCredentials()" class="w-full py-3 bg-brandRed hover:bg-red-700 text-white font-bold rounded-lg text-sm transition mt-2 shadow flex items-center justify-center gap-2">
+          <i data-lucide="check" class="h-4.5 w-4.5"></i> Save & Apply Settings
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POP-UP STEP-UP VERIFICATION MODAL -->
+  <div x-show="showStepUpModal" x-cloak class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
+      <div class="bg-red-50 p-4 border-b border-red-100 flex items-center justify-between">
+        <h3 class="font-bold text-brandRed flex items-center gap-2">
+          <i data-lucide="shield-check" class="h-5 w-5"></i> 8x8 Secure Step-Up Verification
+        </h3>
+      </div>
+
+      <div class="p-6 space-y-4 text-center">
+        <p class="text-sm text-slate-600">You are making a high-value purchase of <strong class="text-slate-800" x-text="` ${checkoutItem.price.toLocaleString()} THB`"></strong>. For security, we require you to verify your identity.</p>
+        
+        <!-- Step-up Verification Message -->
+        <div class="bg-slate-50 p-4 rounded-lg border border-slate-100 text-xs text-slate-500 mb-2">
+          An OTP code has been dispatched via **8x8 Connect API** to your registered phone number.
+        </div>
+
+        <!-- Descope Step-up Web Component container -->
+        <div class="min-h-[150px] flex items-center justify-center">
+          <div id="descope-stepup-container" class="w-full"></div>
+        </div>
+
+        <button @click="cancelCheckout()" class="mt-4 text-xs text-slate-500 hover:text-brandRed underline">
+          Cancel & Return to Shop
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function Shop8App() {
+      return {
+        // App Configurations
+        isConfigured: false,
+        activeTab: 'auth',
+        showConfig: false,
+        showStepUpModal: false,
+        showMobileLogs: false,
+        
+        config: {
+          projectId: 'P3GRdY0chO66O5Uv4XgsAZMWd3pD',
+          flowId: 'sign-up-or-in',
+          supabaseUrl: 'https://jcmeqobxcetnvpypaarh.supabase.co',
+          supabaseAnonKey: 'sb_publishable_ccxyvDY2f3IxzhjdGm7TnA_JIQGlu4S'
+        },
+
+        tempConfig: {
+          projectId: 'P3GRdY0chO66O5Uv4XgsAZMWd3pD',
+          flowId: 'sign-up-or-in',
+          supabaseUrl: 'https://jcmeqobxcetnvpypaarh.supabase.co',
+          supabaseAnonKey: 'sb_publishable_ccxyvDY2f3IxzhjdGm7TnA_JIQGlu4S'
+        },
+
+        // User Sessions
+        userSession: {
+          isLoggedIn: false,
+          userId: '',
+          userLogin: ''
+        },
+
+        // Checkout states
+        checkoutItem: {
+          name: '',
+          price: 0
+        },
+
+        // Shopping Cart state
+        cart: [],
+
+        // Flash Sale mode
+        botSimMode: 'human',
+        flashSimState: null, // 'running', 'human_success', 'bot_intercept'
+
+        // Logging parameters
+        apiLogs: [],
+        expandedLogs: [],
+        pollingInterval: null,
+
+        initApp() {
+          // 1. Load configuration from localStorage
+          const savedConfig = localStorage.getItem('Shop8_config');
+          if (savedConfig) {
+            this.config = JSON.parse(savedConfig);
+            this.isConfigured = !!this.config.projectId && !!this.config.supabaseUrl;
+            this.tempConfig = { ...this.config };
+          } else {
+            // Use pre-populated defaults
+            this.isConfigured = !!this.config.projectId && !!this.config.supabaseUrl;
+            this.tempConfig = { ...this.config };
+          }
+          
+          // Initialize Descope if credentials exist
+          if (this.isConfigured) {
+            this.mountDescopeComponent();
+          }
+          
+          // 2. Start logs polling
+          this.fetchLogs();
+          this.pollingInterval = setInterval(() => this.fetchLogs(), 1500);
+
+          // 3. Sync icons
+          setTimeout(() => lucide.createIcons(), 500);
+        },
+
+        styleShadowElements(wc) {
+          if (!wc) return;
+          const injectStyles = () => {
+            const shadow = wc.shadowRoot;
+            if (shadow) {
+              if (shadow.querySelector('#shop8-custom-styles')) return;
+              
+              const style = document.createElement('style');
+              style.id = 'shop8-custom-styles';
+              style.textContent = `
+                /* Center input text and placeholders */
+                input, select, textarea {
+                  text-align: center !important;
+                }
+                .descope-input, [data-testid="input"], .phone-input-container input {
+                  text-align: center !important;
+                }
+                input::placeholder {
+                  text-align: center !important;
+                }
+              `;
+              shadow.appendChild(style);
+            }
+          };
+          
+          let checkInterval = setInterval(injectStyles, 100);
+          setTimeout(() => clearInterval(checkInterval), 4000);
+        },
+
+        mountDescopeComponent() {
+          // Mount main login flow
+          const container = document.getElementById('descope-wc-container');
+          if (!container) return;
+
+          container.innerHTML = `<descope-wc project-id="${this.config.projectId}" flow-id="${this.config.flowId || 'sign-up-or-in'}"></descope-wc>`;
+          
+          const wc = container.querySelector('descope-wc');
+          this.styleShadowElements(wc);
+
+          wc.addEventListener('success', (e) => {
+            console.log('Login success:', e.detail);
+            this.userSession.isLoggedIn = true;
+            this.userSession.userId = e.detail.user.userId;
+            this.userSession.userLogin = e.detail.user.email || e.detail.user.phone || 'Authenticated User';
+          });
+          
+          wc.addEventListener('error', (e) => {
+            console.error('Login error:', e.detail);
+          });
+        },
+
+        saveCredentials() {
+          this.config = { ...this.tempConfig };
+          localStorage.setItem('Shop8_config', JSON.stringify(this.config));
+          this.isConfigured = !!this.config.projectId && !!this.config.supabaseUrl;
+          this.showConfig = false;
+          
+          if (this.isConfigured) {
+            this.mountDescopeComponent();
+          }
+          
+          alert('Credentials updated successfully!');
+          location.reload();
+        },
+
+        logoutUser() {
+          this.userSession.isLoggedIn = false;
+          this.userSession.userId = '';
+          this.userSession.userLogin = '';
+          this.mountDescopeComponent();
+        },
+
+        // Shopping Cart Methods
+        addToCart(name, price, img) {
+          const existing = this.cart.find(item => item.name === name);
+          if (existing) {
+            existing.qty++;
+          } else {
+            this.cart.push({ name, price, img, qty: 1 });
+          }
+          setTimeout(() => lucide.createIcons(), 50);
+        },
+
+        updateQty(index, amount) {
+          this.cart[index].qty += amount;
+          if (this.cart[index].qty <= 0) {
+            this.cart.splice(index, 1);
+          }
+          setTimeout(() => lucide.createIcons(), 50);
+        },
+
+        getCartTotal() {
+          return this.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+        },
+
+        checkoutCart() {
+          if (this.cart.length === 0) return;
+          const total = this.getCartTotal();
+          this.triggerCheckout('Cart Checkout', total);
+        },
+
+        triggerCheckout(name, price) {
+          this.checkoutItem = { name, price };
+          
+          if (price > 10000) {
+            // High value checkout triggers step-up authentication modal
+            this.showStepUpModal = true;
+            
+            // Mount Step-up Descope widget dynamically
+            setTimeout(() => {
+              const container = document.getElementById('descope-stepup-container');
+              if (container) {
+                // Generates step-up flow using SMS-OTP in your Descope project configuration
+                container.innerHTML = `<descope-wc project-id="${this.config.projectId}" flow-id="step-up"></descope-wc>`;
+                
+                const wc = container.querySelector('descope-wc');
+                this.styleShadowElements(wc);
+
+                wc.addEventListener('success', (e) => {
+                  alert(`Identity Verified! Payment of ${this.checkoutItem.price.toLocaleString()} THB for ${this.checkoutItem.name} Authorized.`);
+                  this.cart = []; // Empty the cart on success
+                  this.showStepUpModal = false;
+                });
+                wc.addEventListener('error', (e) => {
+                  console.error('Step up verification failed:', e.detail);
+                });
+              }
+            }, 100);
+          } else {
+            // Low value checkout succeeds instantly
+            alert(`Order Authorized! Purchased ${name} for ${price.toLocaleString()} THB successfully.`);
+            this.cart = []; // Empty the cart on success
+          }
+        },
+
+        cancelCheckout() {
+          this.showStepUpModal = false;
+          this.checkoutItem = { name: '', price: 0 };
+        },
+
+        runFlashSaleSim() {
+          this.flashSimState = 'running';
+          
+          setTimeout(() => {
+            if (this.botSimMode === 'human') {
+              this.flashSimState = 'human_success';
+            } else {
+              this.flashSimState = 'bot_intercept';
+            }
+            setTimeout(() => lucide.createIcons(), 50);
+          }, 1500);
+        },
+
+        async fetchLogs() {
+          if (!this.config.supabaseUrl || !this.config.supabaseAnonKey) return;
+          
+          try {
+            const url = `${this.config.supabaseUrl}/rest/v1/api_logs?select=*&order=created_at.desc&limit=15`;
+            const response = await fetch(url, {
+              headers: {
+                'apikey': this.config.supabaseAnonKey,
+                'Authorization': `Bearer ${this.config.supabaseAnonKey}`
+              }
+            });
+            
+            if (response.ok) {
+              this.apiLogs = await response.json();
+              setTimeout(() => lucide.createIcons(), 50);
+            }
+          } catch (err) {
+            console.error('Failed to poll logs from Supabase:', err);
+          }
+        },
+
+        async clearConsoleLogs() {
+          if (!this.config.supabaseUrl || !this.config.supabaseAnonKey) return;
+          
+          if (!confirm('Are you sure you want to clear the logs in the database?')) return;
+
+          try {
+            const url = `${this.config.supabaseUrl}/rest/v1/api_logs?id=not.is.null`;
+            const response = await fetch(url, {
+              method: 'DELETE',
+              headers: {
+                'apikey': this.config.supabaseAnonKey,
+                'Authorization': `Bearer ${this.config.supabaseAnonKey}`
+              }
+            });
+            
+            if (response.ok) {
+              this.apiLogs = [];
+              alert('Database logs cleared successfully.');
+            }
+          } catch (err) {
+            console.error('Failed to clear logs:', err);
+          }
+        },
+
+        toggleLog(id) {
+          if (this.expandedLogs.includes(id)) {
+            this.expandedLogs = this.expandedLogs.filter(item => item !== id);
+          } else {
+            this.expandedLogs.push(id);
+          }
+          setTimeout(() => lucide.createIcons(), 50);
+        },
+
+        formatTime(dateString) {
+          const date = new Date(dateString);
+          return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+      }
+    }
+  </script>
+</body>
+</html>
