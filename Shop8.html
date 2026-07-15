@@ -816,6 +816,57 @@
           }
         },
 
+        // Load this returning customer's saved delivery info + passkey status
+        async loadCustomerProfile(userId) {
+          if (!this.config.supabaseUrl || !this.config.supabaseAnonKey || !userId) return;
+          try {
+            const url = `${this.config.supabaseUrl}/rest/v1/customers?user_id=eq.${encodeURIComponent(userId)}&select=*`;
+            const res = await fetch(url, {
+              headers: {
+                'apikey': this.config.supabaseAnonKey,
+                'Authorization': `Bearer ${this.config.supabaseAnonKey}`
+              }
+            });
+            if (res.ok) {
+              const rows = await res.json();
+              if (rows.length > 0) {
+                const c = rows[0];
+                if (c.address) this.shippingInfo.address = c.address;
+                if (c.phone) this.shippingInfo.phone = c.phone;
+                this.userSession.hasPasskey = !!c.has_passkey;
+              }
+            }
+          } catch (err) {
+            console.error('Failed to load customer profile:', err);
+          }
+        },
+
+        // Save/update this customer's delivery info + passkey status for next visit
+        async saveCustomerProfile() {
+          if (!this.config.supabaseUrl || !this.config.supabaseAnonKey || !this.userSession.userId) return;
+          try {
+            const url = `${this.config.supabaseUrl}/rest/v1/customers?on_conflict=user_id`;
+            await fetch(url, {
+              method: 'POST',
+              headers: {
+                'apikey': this.config.supabaseAnonKey,
+                'Authorization': `Bearer ${this.config.supabaseAnonKey}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'resolution=merge-duplicates,return=minimal'
+              },
+              body: JSON.stringify({
+                user_id: this.userSession.userId,
+                full_name: this.userSession.fullName,
+                address: this.shippingInfo.address,
+                phone: this.shippingInfo.phone,
+                has_passkey: this.userSession.hasPasskey
+              })
+            });
+          } catch (err) {
+            console.error('Failed to save customer profile:', err);
+          }
+        },
+
         mountDescopeComponent() {
           // Mount main login flow
           const container = document.getElementById('descope-wc-container');
@@ -832,6 +883,7 @@
             this.userSession.userId = e.detail.user.userId;
             this.userSession.userLogin = e.detail.user.email || e.detail.user.phone || 'Authenticated User';
             this.userSession.fullName = e.detail.user.name || '';
+            this.loadCustomerProfile(e.detail.user.userId);
             this.logToSupabase('LOGIN_SUCCESS', 'User signed up or logged in', {
               userId: e.detail.user.userId,
               loginId: this.userSession.userLogin
@@ -877,6 +929,7 @@
 
           wc.addEventListener('success', () => {
             this.userSession.hasPasskey = true;
+            this.saveCustomerProfile();
             container.innerHTML = '';
             if (onDone) onDone();
           });
@@ -944,6 +997,7 @@
             return;
           }
           this.showAddressModal = false;
+          this.saveCustomerProfile();
           const total = this.getCartTotal();
           this.triggerCheckout('Cart Checkout', total);
         },
@@ -964,6 +1018,7 @@
               this.userSession.userId = e.detail.user.userId;
               this.userSession.userLogin = e.detail.user.email || e.detail.user.phone || 'Authenticated User';
               this.userSession.fullName = e.detail.user.name || '';
+              this.loadCustomerProfile(e.detail.user.userId);
             }
             // Strip OAuth callback params left over from the redirect
             if (window.location.search) history.replaceState(null, '', window.location.pathname);
@@ -972,6 +1027,7 @@
               item: this.checkoutItem.name,
               amount: this.checkoutItem.price
             });
+            this.saveCustomerProfile();
             this.cart = []; // Empty the cart on success
             this.showStepUpModal = false;
             if (this.userSession.hasPasskey) {
