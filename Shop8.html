@@ -859,7 +859,8 @@
                 full_name: this.userSession.fullName,
                 address: this.shippingInfo.address,
                 phone: this.shippingInfo.phone,
-                has_passkey: this.userSession.hasPasskey
+                has_passkey: this.userSession.hasPasskey,
+                updated_at: new Date().toISOString()
               })
             });
           } catch (err) {
@@ -922,7 +923,7 @@
           const container = document.getElementById(containerId);
           if (!container) return;
 
-          container.innerHTML = `<descope-wc project-id="${this.config.projectId}" flow-id="add-passkeys"></descope-wc>`;
+          container.innerHTML = `<descope-wc project-id="${this.config.projectId}" flow-id="enroll-passkey-strict"></descope-wc>`;
 
           const wc = container.querySelector('descope-wc');
           this.styleShadowElements(wc);
@@ -1136,7 +1137,7 @@
 
         formatTime(dateString) {
           const date = new Date(dateString);
-          return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Bangkok' }) + ' ICT';
         }
       }
     }
