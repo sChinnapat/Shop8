@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="104" viewBox="0 0 320 104">
+  <!-- Shop8 logo (no tagline) — matches 8x8 brand: red #E51D24, slate dark #131926 -->
+  <rect x="30" y="8" width="260" height="88" rx="18" fill="#E51D24"/>
+  <text x="62" y="70" font-family="'Segoe UI', Arial, sans-serif" font-size="54" font-weight="800" fill="#ffffff" letter-spacing="-2">Shop</text>
+  <rect x="206" y="22" width="60" height="60" rx="10" fill="#000000" opacity="0.22"/>
+  <text x="236" y="72" font-family="'Segoe UI', Arial, sans-serif" font-size="50" font-weight="800" fill="#ffffff" text-anchor="middle">8</text>
+</svg>
