@@ -645,8 +645,9 @@
         </div>
 
         <div class="space-y-1">
-          <label class="block text-xs font-bold text-slate-700 uppercase">Username</label>
-          <input type="text" x-model="profile.username" placeholder="Choose a username" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none">
+          <label class="block text-xs font-bold text-slate-700 uppercase">Email</label>
+          <input type="email" x-show="userSession.email" :value="userSession.email" disabled class="w-full border border-slate-200 bg-slate-50 rounded px-3 py-2 text-sm text-slate-500">
+          <input type="email" x-show="!userSession.email" x-model="profile.email" placeholder="you@example.com" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none">
         </div>
 
         <div class="space-y-1">
@@ -735,13 +736,14 @@
           isLoggedIn: false,
           userId: '',
           userLogin: '',
+          email: '',
           fullName: '',
           hasPasskey: false,
           hasPassword: false
         },
 
         profile: {
-          username: ''
+          email: ''
         },
 
         // Checkout states
@@ -872,7 +874,7 @@
                 const c = rows[0];
                 if (c.address) this.shippingInfo.address = c.address;
                 if (c.phone) this.shippingInfo.phone = c.phone;
-                if (c.username) this.profile.username = c.username;
+                if (c.email && !this.userSession.email) this.profile.email = c.email;
                 this.userSession.hasPasskey = !!c.has_passkey;
                 this.userSession.hasPassword = !!c.has_password;
               }
@@ -898,7 +900,7 @@
               body: JSON.stringify({
                 user_id: this.userSession.userId,
                 full_name: this.userSession.fullName,
-                username: this.profile.username,
+                email: this.userSession.email || this.profile.email,
                 address: this.shippingInfo.address,
                 phone: this.shippingInfo.phone,
                 has_passkey: this.userSession.hasPasskey,
@@ -926,6 +928,7 @@
             this.userSession.isLoggedIn = true;
             this.userSession.userId = e.detail.user.userId;
             this.userSession.userLogin = e.detail.user.email || e.detail.user.phone || 'Authenticated User';
+            this.userSession.email = e.detail.user.email || '';
             this.userSession.fullName = e.detail.user.name || '';
             this.loadCustomerProfile(e.detail.user.userId);
             this.logToSupabase('LOGIN_SUCCESS', 'User signed up or logged in', {
@@ -957,7 +960,11 @@
           this.userSession.isLoggedIn = false;
           this.userSession.userId = '';
           this.userSession.userLogin = '';
+          this.userSession.email = '';
           this.userSession.fullName = '';
+          this.userSession.hasPasskey = false;
+          this.userSession.hasPassword = false;
+          this.profile.email = '';
           this.showPasskeyEnroll = false;
           this.mountDescopeComponent();
         },
@@ -1030,8 +1037,12 @@
           return this.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
         },
 
+        hasEmail() {
+          return !!(this.userSession.email || this.profile.email.trim());
+        },
+
         isProfileComplete() {
-          return !!this.profile.username.trim() && !!this.userSession.hasPassword &&
+          return this.hasEmail() && !!this.userSession.hasPassword &&
                  !!this.shippingInfo.address.trim() && !!this.shippingInfo.phone.trim();
         },
 
@@ -1057,8 +1068,8 @@
         },
 
         saveProfile() {
-          if (!this.profile.username.trim() || !this.shippingInfo.address.trim() || !this.shippingInfo.phone.trim()) {
-            alert('Please fill in your username, delivery address, and phone number.');
+          if (!this.hasEmail() || !this.shippingInfo.address.trim() || !this.shippingInfo.phone.trim()) {
+            alert('Please fill in your email, delivery address, and phone number.');
             return;
           }
           if (!this.userSession.hasPassword) {
@@ -1112,6 +1123,7 @@
               this.userSession.isLoggedIn = true;
               this.userSession.userId = e.detail.user.userId;
               this.userSession.userLogin = e.detail.user.email || e.detail.user.phone || 'Authenticated User';
+              this.userSession.email = e.detail.user.email || '';
               this.userSession.fullName = e.detail.user.name || '';
               this.loadCustomerProfile(e.detail.user.userId);
             }
