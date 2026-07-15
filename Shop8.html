@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Shop8 - Online Shopping</title>
-  
+
   <!-- CSS: Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
+
   <!-- Icons: Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  
+
   <!-- JS Framework: Alpine.js -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
@@ -57,37 +57,57 @@
 <body class="bg-slate-50 min-h-screen flex flex-col font-sans" x-data="Shop8App()" x-init="initApp()">
 
   <!-- HEADER NAVIGATION -->
-  <header class="bg-brandDark text-white px-6 py-4 flex items-center justify-between border-b border-slate-800 shadow-md">
-    <div class="flex items-center gap-3">
-      <!-- 8x8 stylized logo representation -->
-      <div class="bg-brandRed text-white font-extrabold text-xl px-3 py-1.5 rounded flex items-center justify-center tracking-tighter">
-        <span>shop</span><span class="text-white bg-black/20 px-1 rounded ml-0.5">8</span>
-      </div>
-      <div class="text-xs text-slate-400 hidden sm:block">
-        <p class="font-semibold text-slate-300">Everything you need, delivered fast</p>
-        <p class="font-light">Trusted by thousands of shoppers</p>
-      </div>
+  <header class="bg-brandDark text-white px-4 sm:px-6 py-3 flex items-center gap-3 sm:gap-4 border-b border-slate-800 shadow-md">
+    <!-- Logo -->
+    <div class="bg-brandRed text-white font-extrabold text-xl px-3 py-1.5 rounded flex items-center justify-center tracking-tighter shrink-0">
+      <span>shop</span><span class="text-white bg-black/20 px-1 rounded ml-0.5">8</span>
     </div>
 
-    <!-- Configuration Trigger -->
-    <div class="flex items-center gap-4">
-      <!-- Connection Status indicator -->
-      <div class="flex items-center gap-2">
-        <span class="h-2.5 w-2.5 rounded-full" :class="isConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'"></span>
-        <span class="text-xs text-slate-300 font-medium" x-text="isConfigured ? 'Store Online' : 'Setup Required'"></span>
+    <!-- Search (only once signed in) -->
+    <div class="flex-1 max-w-xl" x-show="userSession.isLoggedIn" x-cloak>
+      <div class="relative">
+        <input type="text" x-model="searchQuery" placeholder="Search products..." class="w-full rounded-md pl-4 pr-10 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brandRed">
+        <i data-lucide="search" class="h-4 w-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2"></i>
       </div>
-      <button @click="showConfig = true" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded border border-slate-700 transition flex items-center gap-1.5">
-        <i data-lucide="settings" class="h-3.5 w-3.5"></i> Settings
+    </div>
+    <div class="flex-1" x-show="!userSession.isLoggedIn"></div>
+
+    <!-- Right controls -->
+    <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+      <span class="hidden md:flex items-center gap-1.5 text-[10px] text-slate-400">
+        <span class="h-2 w-2 rounded-full" :class="isConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'"></span>
+        <span x-text="isConfigured ? 'Store Online' : 'Setup Required'"></span>
+      </span>
+
+      <button @click="showDesktopLogs = !showDesktopLogs" title="Toggle API Logs" class="hidden lg:flex items-center justify-center text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded border border-slate-700 transition">
+        <i data-lucide="terminal" class="h-3.5 w-3.5"></i>
       </button>
+
+      <button @click="showConfig = true" title="Settings" class="flex items-center justify-center text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded border border-slate-700 transition">
+        <i data-lucide="settings" class="h-3.5 w-3.5"></i>
+      </button>
+
+      <template x-if="userSession.isLoggedIn">
+        <div class="flex items-center gap-2 sm:gap-3">
+          <button @click="showCartDrawer = true" class="relative p-2 hover:bg-slate-800 rounded-md transition">
+            <i data-lucide="shopping-cart" class="h-5 w-5"></i>
+            <span x-show="cart.length > 0" x-text="cartItemCount()" class="absolute -top-1 -right-1 bg-brandRed text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center"></span>
+          </button>
+          <button @click="openProfile('menu')" class="flex items-center gap-1.5 text-xs bg-slate-800 hover:bg-slate-700 pl-2 pr-3 py-1.5 rounded-full transition">
+            <i data-lucide="user" class="h-4 w-4"></i>
+            <span class="hidden sm:inline" x-text="userSession.fullName ? userSession.fullName.split(' ')[0] : 'Account'"></span>
+          </button>
+        </div>
+      </template>
     </div>
   </header>
 
   <!-- MAIN WORKSPACE -->
   <main class="flex-1 flex flex-col lg:flex-row min-h-0">
-    
-    <!-- LEFT SIDE: ACTIVE DEMO INTERFACE (70% width) -->
-    <section class="flex-1 p-6 lg:p-8 overflow-y-auto">
-      
+
+    <!-- LEFT SIDE: ACTIVE DEMO INTERFACE -->
+    <section class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+
       <!-- CONFIGURATION NOTICE (If Project ID is missing) -->
       <template x-if="!isConfigured">
         <div class="bg-amber-50 border-l-4 border-amber-500 p-5 rounded shadow-sm mb-6">
@@ -104,32 +124,13 @@
         </div>
       </template>
 
-      <!-- DEMO CONTENT TABS (Only shown if configured) -->
-      <div x-show="isConfigured" class="space-y-6">
-        
-        <!-- TOP TABS FOR DEMO FLOW STAGES -->
-        <div class="flex border-b border-slate-200 gap-1 bg-white p-1 rounded-lg shadow-sm">
-          <button @click="activeTab = 'auth'" class="flex-1 py-3 px-4 font-semibold text-sm rounded-md transition flex items-center justify-center gap-2"
-                  :class="activeTab === 'auth' ? 'bg-brandRed text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'">
-            <i data-lucide="shield-check" class="h-4.5 w-4.5"></i> Sign In
-          </button>
-          <button @click="activeTab = 'shop'" class="flex-1 py-3 px-4 font-semibold text-sm rounded-md transition flex items-center justify-center gap-2"
-                  :class="activeTab === 'shop' ? 'bg-brandRed text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'">
-            <i data-lucide="shopping-cart" class="h-4.5 w-4.5"></i> Shop
-          </button>
-          <button @click="activeTab = 'flash'" class="flex-1 py-3 px-4 font-semibold text-sm rounded-md transition flex items-center justify-center gap-2"
-                  :class="activeTab === 'flash' ? 'bg-brandRed text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'">
-            <i data-lucide="zap" class="h-4.5 w-4.5"></i> Flash Sale
-          </button>
-        </div>
+      <div x-show="isConfigured">
 
-        <!-- TAB 1: ONBOARDING & LOGIN CLONE (Shopee Web Mock Layout) -->
-        <div x-show="activeTab === 'auth'" x-cloak class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          
-          <!-- Outer Grid: Shopee layout representation -->
+        <!-- AUTH VIEW (shown until the customer signs in) -->
+        <div x-show="!userSession.isLoggedIn" x-cloak class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div class="grid grid-cols-1 md:grid-cols-12">
-            
-            <!-- Left Banner (Corporate red theme) -->
+
+            <!-- Left Banner -->
             <div class="md:col-span-5 bg-brandRed p-8 flex flex-col justify-between text-white min-h-[300px] md:min-h-[450px]">
               <div class="flex items-center gap-2">
                 <div class="bg-white text-brandRed font-black text-2xl px-3 py-1 rounded">Shop8</div>
@@ -145,312 +146,76 @@
 
             <!-- Right Login Form Wrapper -->
             <div class="md:col-span-7 p-8 flex flex-col justify-center bg-slate-50/50">
-              
-              <!-- DESCOPE FLOW ELEMENT WIDGET -->
               <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-md max-w-md mx-auto w-full relative">
-                
-                <!-- Descope Custom Element -->
                 <div class="min-h-[350px] flex flex-col justify-center">
-                  <div class="text-center mb-6" x-show="userSession.isLoggedIn">
-                    <div class="h-16 w-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <i data-lucide="user-check" class="h-8 w-8"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-slate-800">
-                      <span x-text="userSession.fullName ? 'Welcome back, ' + userSession.fullName.split(' ')[0] + '!' : 'Welcome back!'"></span>
-                    </h3>
-                    <p class="text-sm text-slate-500 mt-1">Great to see you again.</p>
-                    <div class="mt-4 bg-slate-50 p-4 rounded-lg text-left border border-slate-100 text-xs space-y-1">
-                      <p class="text-slate-400 font-bold">Signed in as:</p>
-                      <p class="text-slate-700" x-text="userSession.userLogin"></p>
-                    </div>
-                    <div class="flex gap-2 mt-6">
-                      <button @click="activeTab = 'shop'" class="flex-1 py-3 bg-brandRed hover:bg-red-700 text-white font-bold rounded-lg text-sm transition shadow-md flex items-center justify-center gap-2">
-                        <i data-lucide="shopping-bag" class="h-4 w-4"></i> Start Shopping
-                      </button>
-                      <button @click="openProfile('menu')" title="Profile" class="shrink-0 w-12 h-12 flex items-center justify-center border border-slate-300 hover:border-brandRed hover:text-brandRed text-slate-600 rounded-lg transition">
-                        <i data-lucide="settings" class="h-5 w-5"></i>
-                      </button>
-                    </div>
-                    <button @click="enrollPasskey()" x-show="!showPasskeyEnroll && !userSession.hasPasskey" class="mt-3 w-full py-2 border border-slate-300 hover:border-brandRed hover:text-brandRed text-slate-600 font-semibold rounded-lg text-sm transition flex items-center justify-center gap-2">
-                      <i data-lucide="fingerprint" class="h-4 w-4"></i> Turn On Fingerprint / Face Sign-In
-                    </button>
-                    <div id="descope-passkey-container" x-show="showPasskeyEnroll" x-cloak class="mt-4"></div>
-                    <button @click="logoutUser()" class="mt-3 w-full py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-lg text-sm transition">
-                      Sign Out
-                    </button>
-                  </div>
-
-                  <!-- The actual Descope web component (shown if logged out) -->
-                  <div x-show="!userSession.isLoggedIn">
-                    <!-- Configured dynamically based on settings -->
-                    <div id="descope-wc-container"></div>
-                  </div>
+                  <div id="descope-wc-container"></div>
                 </div>
-
               </div>
-
             </div>
           </div>
         </div>
 
-        <!-- TAB 2: SHOP STOREFRONT (Step-Up Checkout Demo) -->
-        <div x-show="activeTab === 'shop'" x-cloak class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <div class="border-b border-slate-100 pb-4 mb-6">
-            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+        <!-- STOREFRONT VIEW (shown once signed in) -->
+        <div x-show="userSession.isLoggedIn" x-cloak class="space-y-6">
+
+          <!-- Flash Sale promo banner -->
+          <button @click="showFlashSaleModal = true" class="w-full text-left bg-gradient-to-r from-brandDark to-slate-800 rounded-xl p-4 sm:p-5 flex items-center justify-between shadow-md hover:shadow-lg transition group">
+            <div class="flex items-center gap-4 min-w-0">
+              <div class="bg-brandRed text-white p-3 rounded-lg animate-pulse shrink-0">
+                <i data-lucide="zap" class="h-6 w-6"></i>
+              </div>
+              <div class="min-w-0">
+                <h3 class="font-black text-white text-sm sm:text-lg truncate">Flash Sale — iPhone 15 Pro Max @ 8 THB!</h3>
+                <p class="text-xs text-slate-400">Limited to 1 unit. Tap to join the flash sale.</p>
+              </div>
+            </div>
+            <i data-lucide="chevron-right" class="h-5 w-5 text-slate-400 group-hover:text-white transition shrink-0"></i>
+          </button>
+
+          <!-- Product Grid -->
+          <div>
+            <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
               <i data-lucide="store" class="text-brandRed"></i> All Products
             </h2>
-            <p class="text-sm text-slate-500 mt-1">Add your favorite items to the cart and check out anytime.</p>
-          </div>
-
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            
-            <!-- Left Side: Product Grid (8 cols) -->
-            <div class="lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-              
-              <!-- Item 1 (Low Value) -->
-              <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between bg-white hover:border-slate-300 transition">
-                <div class="h-40 w-full bg-slate-100 overflow-hidden flex items-center justify-center">
-                  <img src="wireless_mouse.jpg" alt="Shop8 Wireless Mouse" class="h-full w-full object-cover">
-                </div>
-                <div class="p-4 flex-1 flex flex-col justify-between">
-                  <div>
-                    <span class="bg-slate-100 text-slate-800 text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-full">Accessories</span>
-                    <h3 class="font-bold text-sm text-slate-800 mt-2">Shop8 Ergonomic Wireless Mouse</h3>
-                    <p class="text-xs text-slate-500 mt-1 line-clamp-2">High precision silent mouse with customizable DPI.</p>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <template x-for="p in filteredProducts()" :key="p.id">
+                <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between bg-white hover:border-slate-300 hover:shadow-md transition relative">
+                  <div x-show="p.badge" class="absolute top-2 right-2 bg-brandRed text-white text-[8px] uppercase font-black px-2 py-0.5 rounded-full shadow-sm z-10" x-text="p.badge"></div>
+                  <div class="h-32 sm:h-40 w-full bg-slate-100 overflow-hidden flex items-center justify-center">
+                    <img :src="p.img" :alt="p.name" class="h-full w-full object-cover">
                   </div>
-                  <div>
-                    <p class="text-lg font-black text-brandRed mt-3">890 THB</p>
-                  </div>
-                </div>
-                <div class="p-4 bg-slate-50 border-t border-slate-100">
-                  <button @click="addToCart('Wireless Mouse', 890, 'wireless_mouse.jpg')" class="w-full bg-brandDark hover:bg-slate-800 text-white text-xs font-bold py-2 rounded-md transition flex items-center justify-center gap-1.5">
-                    <i data-lucide="shopping-cart" class="h-3.5 w-3.5"></i> Add To Cart
-                  </button>
-                </div>
-              </div>
-
-              <!-- Item 2 (Medium Value) -->
-              <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between bg-white hover:border-slate-300 transition">
-                <div class="h-40 w-full bg-slate-100 overflow-hidden flex items-center justify-center">
-                  <img src="vip_gold_card.jpg" alt="Shop8 VIP Card" class="h-full w-full object-cover">
-                </div>
-                <div class="p-4 flex-1 flex flex-col justify-between">
-                  <div>
-                    <span class="bg-slate-100 text-slate-800 text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-full">Memberships</span>
-                    <h3 class="font-bold text-sm text-slate-800 mt-2">Shop8 Gold VIP Annual Pass</h3>
-                    <p class="text-xs text-slate-500 mt-1 line-clamp-2">Unlocks free express shipping and double points.</p>
-                  </div>
-                  <div>
-                    <p class="text-lg font-black text-brandRed mt-3">4,900 THB</p>
-                  </div>
-                </div>
-                <div class="p-4 bg-slate-50 border-t border-slate-100">
-                  <button @click="addToCart('Gold VIP Pass', 4900, 'vip_gold_card.jpg')" class="w-full bg-brandDark hover:bg-slate-800 text-white text-xs font-bold py-2 rounded-md transition flex items-center justify-center gap-1.5">
-                    <i data-lucide="shopping-cart" class="h-3.5 w-3.5"></i> Add To Cart
-                  </button>
-                </div>
-              </div>
-
-              <!-- Item 3 (HIGH VALUE - TRIGGERS STEP-UP) -->
-              <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between bg-white hover:border-slate-300 transition relative">
-                <div class="absolute top-2 right-2 bg-brandRed text-white text-[8px] uppercase font-black px-2 py-0.5 rounded-full shadow-sm z-10">
-                  Extra Protection Included
-                </div>
-                <div class="h-40 w-full bg-slate-100 overflow-hidden flex items-center justify-center">
-                  <img src="iphone_15_pro.jpg" alt="iPhone 15 Pro Max" class="h-full w-full object-cover">
-                </div>
-                <div class="p-4 flex-1 flex flex-col justify-between">
-                  <div>
-                    <span class="bg-red-50 text-brandRed text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-full">Electronics</span>
-                    <h3 class="font-bold text-sm text-slate-800 mt-2">Apple iPhone 15 Pro Max</h3>
-                    <p class="text-xs text-slate-500 mt-1 line-clamp-2">Premium titanium finish with our best-in-class protection for high-value orders.</p>
-                  </div>
-                  <div>
-                    <p class="text-lg font-black text-brandRed mt-3">48,900 THB</p>
-                  </div>
-                </div>
-                <div class="p-4 bg-red-50/50 border-t border-slate-100">
-                  <button @click="addToCart('iPhone 15 Pro Max', 48900, 'iphone_15_pro.jpg')" class="w-full bg-brandRed hover:bg-red-700 text-white text-xs font-bold py-2 rounded-md transition flex items-center justify-center gap-1.5">
-                    <i data-lucide="shopping-cart" class="h-3.5 w-3.5"></i> Add To Cart
-                  </button>
-                </div>
-              </div>
-
-            </div>
-
-            <!-- Right Side: Shopping Cart Summary (4 cols) -->
-            <div class="lg:col-span-4 bg-slate-50 p-5 rounded-xl border border-slate-200 flex flex-col justify-between min-h-[300px]">
-              <div>
-                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-1.5 border-b border-slate-200 pb-3 mb-4">
-                  <i data-lucide="shopping-bag" class="text-brandRed"></i> Shopping Cart
-                </h3>
-                
-                <!-- Cart items list -->
-                <div class="space-y-3 overflow-y-auto max-h-[220px] pr-1 custom-scrollbar">
-                  <template x-if="cart.length === 0">
-                    <div class="text-center py-10 text-slate-400 text-xs">
-                      <i data-lucide="shopping-cart" class="h-8 w-8 mx-auto mb-2 text-slate-300"></i>
-                      Your cart is empty. Add items from the shop.
+                  <div class="p-3 sm:p-4 flex-1 flex flex-col justify-between">
+                    <div>
+                      <span class="bg-slate-100 text-slate-800 text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-full" x-text="p.category"></span>
+                      <h3 class="font-bold text-sm text-slate-800 mt-2" x-text="p.name"></h3>
+                      <p class="text-xs text-slate-500 mt-1 line-clamp-2" x-text="p.desc"></p>
                     </div>
-                  </template>
-                  
-                  <template x-for="(item, index) in cart" :key="index">
-                    <div class="flex items-center gap-3 bg-white p-2 rounded-lg border border-slate-100 relative">
-                      <img :src="item.img" class="h-10 w-10 object-cover rounded bg-slate-100 shrink-0">
-                      <div class="min-w-0 flex-1">
-                        <h4 class="font-bold text-xs text-slate-800 truncate" x-text="item.name"></h4>
-                        <p class="text-[10px] text-slate-500" x-text="`${item.price.toLocaleString()} THB`"></p>
-                      </div>
-                      
-                      <!-- Quantity selector -->
-                      <div class="flex items-center gap-1.5">
-                        <button @click="updateQty(index, -1)" class="h-5 w-5 bg-slate-100 rounded text-slate-600 hover:bg-slate-200 flex items-center justify-center font-bold text-xs">-</button>
-                        <span class="text-xs font-bold w-4 text-center text-slate-700" x-text="item.qty"></span>
-                        <button @click="updateQty(index, 1)" class="h-5 w-5 bg-slate-100 rounded text-slate-600 hover:bg-slate-200 flex items-center justify-center font-bold text-xs">+</button>
-                      </div>
-                    </div>
-                  </template>
+                    <p class="text-lg font-black text-brandRed mt-3" x-text="p.price.toLocaleString() + ' THB'"></p>
+                  </div>
+                  <div class="p-3 sm:p-4 bg-slate-50 border-t border-slate-100">
+                    <button @click="addToCart(p.name, p.price, p.img)" class="w-full bg-brandDark hover:bg-slate-800 text-white text-xs font-bold py-2 rounded-md transition flex items-center justify-center gap-1.5">
+                      <i data-lucide="shopping-cart" class="h-3.5 w-3.5"></i> Add To Cart
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              <!-- Cart total and actions -->
-              <div class="border-t border-slate-200 pt-4 mt-4 space-y-4">
-                <div class="flex justify-between items-center text-sm">
-                  <span class="text-slate-500 font-medium">Total:</span>
-                  <span class="font-black text-brandRed text-lg" x-text="`${getCartTotal().toLocaleString()} THB`"></span>
-                </div>
-                
-                <!-- Rule indicator warning -->
-                <div x-show="getCartTotal() > 10000" x-cloak class="bg-red-50 text-brandRed text-[10px] p-2 rounded border border-red-100 flex items-center gap-1.5 font-bold">
-                  <i data-lucide="shield-check" class="h-4 w-4 shrink-0"></i>
-                  <span>High-value order — we'll quickly confirm it's really you before shipping.</span>
-                </div>
-
-                <button @click="checkoutCart()" class="w-full py-3 text-white text-xs font-bold rounded-lg transition shadow-md flex items-center justify-center gap-2"
-                        :class="cart.length === 0 ? 'bg-slate-300 cursor-not-allowed shadow-none' : 'bg-brandRed hover:bg-red-700'"
-                        :disabled="cart.length === 0">
-                  <i data-lucide="credit-card" class="h-4 w-4"></i> Proceed to Checkout
-                </button>
-              </div>
+              </template>
             </div>
-
-          </div>
-        </div>
-        </div>
-
-        <!-- TAB 3: FLASH SALE BOT GUARD (Arkose/reCAPTCHA Simulation) -->
-        <div x-show="activeTab === 'flash'" x-cloak class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <div class="border-b border-slate-100 pb-4 mb-6">
-            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-              <i data-lucide="zap" class="text-brandRed"></i> Flash Sale
-            </h2>
-            <p class="text-sm text-slate-500 mt-1">Limited stock, limited time — grab it before it's gone. We keep bots out so real shoppers get a fair shot.</p>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <!-- Left Controls -->
-            <div class="space-y-6">
-              <div class="bg-slate-50 p-5 rounded-xl border border-slate-100 space-y-4">
-                <h3 class="font-bold text-slate-800 text-sm">Select Buyer Simulation Mode</h3>
-                
-                <div class="grid grid-cols-2 gap-3">
-                  <button @click="botSimMode = 'human'" class="py-3 px-4 rounded-lg border text-sm font-bold transition flex flex-col items-center gap-2 text-center"
-                          :class="botSimMode === 'human' ? 'border-brandRed bg-red-50 text-brandRed' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'">
-                    <i data-lucide="user" class="h-6 w-6"></i>
-                    <span>Real Human User</span>
-                  </button>
-                  <button @click="botSimMode = 'bot'" class="py-3 px-4 rounded-lg border text-sm font-bold transition flex flex-col items-center gap-2 text-center"
-                          :class="botSimMode === 'bot' ? 'border-brandRed bg-red-50 text-brandRed' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'">
-                    <i data-lucide="bot" class="h-6 w-6"></i>
-                    <span>Automated Script</span>
-                  </button>
-                </div>
-
-                <div class="text-xs text-slate-500 leading-relaxed pt-2">
-                  <p x-show="botSimMode === 'human'"><strong class="text-slate-700">Human Mode:</strong> Google reCAPTCHA computes a clean Risk Score (e.g. 0.9). Descope bypasses any verification screens and allows checkout instantly.</p>
-                  <p x-show="botSimMode === 'bot'"><strong class="text-slate-700">Bot Mode:</strong> Telemetry detects head-less browser flags. Descope flags the request and forces a **strict SMS OTP challenge** via 8x8 to prove the user has a real, physical SIM card.</p>
-                </div>
-              </div>
-
-              <div class="border border-slate-100 rounded-xl overflow-hidden bg-slate-900 text-white p-5 flex items-center justify-between shadow">
-                <div class="flex items-center gap-3">
-                  <div class="bg-brandRed text-white p-3 rounded-lg animate-pulse">
-                    <i data-lucide="zap" class="h-6 w-6"></i>
-                  </div>
-                  <div>
-                    <h4 class="font-black text-lg">iPhone 15 Pro Max @ 8 THB!</h4>
-                    <p class="text-xs text-slate-400">Limited to 1 unit. Campaign live right now.</p>
-                  </div>
-                </div>
-                <button @click="runFlashSaleSim()" class="bg-brandRed hover:bg-red-700 text-white font-bold text-sm px-6 py-3 rounded-lg shadow-md transition shrink-0">
-                  Buy Now
-                </button>
-              </div>
-            </div>
-
-            <!-- Right Results Screen -->
-            <div class="border border-slate-200 rounded-xl p-6 bg-slate-50/50 flex flex-col justify-between min-h-[300px]">
-              <div>
-                <h3 class="font-bold text-slate-800 text-sm">Security Gateway Decision Screen</h3>
-                <p class="text-xs text-slate-500 mt-1">Real-time risk scoring evaluation via Descope flow rules:</p>
-              </div>
-
-              <!-- Simulation Output Area -->
-              <div class="flex-1 flex flex-col justify-center items-center py-6">
-                <!-- Idle State -->
-                <div x-show="!flashSimState" class="text-center text-slate-400">
-                  <i data-lucide="play" class="h-12 w-12 mx-auto mb-2 text-slate-300"></i>
-                  <p class="text-sm font-medium">Click "Buy Now" to run simulation</p>
-                </div>
-
-                <!-- Processing state -->
-                <div x-show="flashSimState === 'running'" class="text-center">
-                  <div class="h-10 w-10 border-4 border-brandRed border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                  <p class="text-sm font-bold text-slate-700">Evaluating client telemetry...</p>
-                  <p class="text-xs text-slate-400 mt-1">Analyzing mouse inputs & headers</p>
-                </div>
-
-                <!-- Human Success state -->
-                <div x-show="flashSimState === 'human_success'" x-cloak class="text-center">
-                  <div class="h-14 w-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i data-lucide="check" class="h-8 w-8"></i>
-                  </div>
-                  <h4 class="font-bold text-emerald-800 text-lg">Purchase Order Created!</h4>
-                  <p class="text-xs text-slate-600 mt-1">reCAPTCHA Score: <span class="font-bold">0.95 (Low Risk)</span></p>
-                  <span class="mt-3 inline-block bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded">Bypassed Verification</span>
-                </div>
-
-                <!-- Bot Intercepted state -->
-                <div x-show="flashSimState === 'bot_intercept'" x-cloak class="text-center max-w-sm">
-                  <div class="h-14 w-14 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i data-lucide="shield-alert" class="h-8 w-8"></i>
-                  </div>
-                  <h4 class="font-bold text-amber-800 text-lg">Suspicious Access Blocked</h4>
-                  <p class="text-xs text-slate-600 mt-1">reCAPTCHA Score: <span class="font-bold">0.12 (High Risk / Bot)</span></p>
-                  <p class="text-xs text-amber-700 mt-2">Descope Flow automatically intercepted the script and triggered a **Step-up SMS OTP via 8x8** to verify physical SIM ownership.</p>
-                </div>
-              </div>
-
-              <div class="border-t border-slate-200 pt-4 flex items-center justify-between text-xs text-slate-500">
-                <span>Integrated Services:</span>
-                <span class="font-semibold text-slate-700 flex items-center gap-1">
-                  <span class="h-2 w-2 rounded-full bg-emerald-500"></span> Google reCAPTCHA Enterprise
-                </span>
-              </div>
+            <div x-show="filteredProducts().length === 0" x-cloak class="text-center py-16 text-slate-400">
+              <i data-lucide="search" class="h-10 w-10 mx-auto mb-2 text-slate-300"></i>
+              No products match "<span x-text="searchQuery"></span>"
             </div>
           </div>
         </div>
-
       </div>
 
     </section>
 
-    <!-- RIGHT SIDE: REAL-TIME API CONSOLE LOGS (30% width / Sliding drawer on mobile) -->
+    <!-- RIGHT SIDE: REAL-TIME API CONSOLE LOGS -->
     <div x-show="showMobileLogs" @click="showMobileLogs = false" x-cloak class="fixed inset-0 bg-black/60 backdrop-blur-xs z-30 lg:hidden" x-transition.opacity></div>
 
     <aside class="fixed lg:static inset-y-0 right-0 z-40 w-80 lg:w-[400px] bg-slate-900 border-l border-slate-800 flex flex-col text-slate-200 transition-transform duration-300 transform lg:translate-x-0"
-           :class="showMobileLogs ? 'translate-x-0 shadow-2xl' : 'translate-x-full lg:translate-x-0'">
-      
+           :class="[showMobileLogs ? 'translate-x-0 shadow-2xl' : 'translate-x-full lg:translate-x-0', !showDesktopLogs ? 'lg:hidden' : '']">
+
       <!-- Console Header -->
       <div class="p-4 border-b border-slate-800 flex items-center justify-between shrink-0 bg-slate-950">
         <div class="flex items-center gap-2 min-w-0">
@@ -467,12 +232,15 @@
           <button @click="fetchLogs()" class="text-[9px] lg:text-[10px] bg-brandRed hover:bg-red-700 text-white px-2 py-1 rounded transition flex items-center gap-1 font-semibold">
             <i data-lucide="refresh-cw" class="h-3 w-3"></i> Refresh
           </button>
+          <button @click="showDesktopLogs = false" title="Hide panel" class="hidden lg:flex text-[9px] lg:text-[10px] bg-slate-800 hover:bg-slate-700 hover:text-white text-slate-400 px-2 py-1 rounded transition border border-slate-700">
+            <i data-lucide="x" class="h-3 w-3"></i>
+          </button>
         </div>
       </div>
 
       <!-- Logs List (Scrollable) -->
       <div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-slate-900/50">
-        
+
         <template x-if="apiLogs.length === 0">
           <div class="h-full flex flex-col items-center justify-center text-slate-500 text-center py-20">
             <i data-lucide="terminal" class="h-10 w-10 text-slate-700 mb-2"></i>
@@ -483,7 +251,7 @@
 
         <template x-for="(log, index) in apiLogs" :key="log.id">
           <div class="bg-slate-950 border border-slate-800 rounded-lg overflow-hidden text-xs shadow-md">
-            
+
             <!-- Log header accordion toggle -->
             <div @click="toggleLog(log.id)" class="p-3 flex items-center justify-between cursor-pointer hover:bg-slate-900 transition border-b border-slate-900">
               <div class="flex items-center gap-2 min-w-0">
@@ -501,17 +269,14 @@
 
             <!-- Log expanded payload details -->
             <div x-show="expandedLogs.includes(log.id)" x-transition class="p-3 bg-slate-950/70 space-y-3 font-mono text-[10px]">
-              
-              <!-- Info statement -->
+
               <div class="text-slate-400 pb-2 border-b border-slate-900" x-text="log.message"></div>
-              
-              <!-- Descope received body -->
+
               <div class="space-y-1">
                 <p class="text-amber-500 font-bold">← Webhook Received (from Descope):</p>
                 <pre class="bg-slate-900 p-2 rounded text-slate-300 overflow-x-auto custom-scrollbar" x-text="JSON.stringify(log.payload.descope_received || log.payload.descope_payload || log.payload, null, 2)"></pre>
               </div>
 
-              <!-- 8x8 API Dispatch details (If present) -->
               <template x-if="log.payload.request_to_8x8">
                 <div class="space-y-3 pt-2 border-t border-slate-900">
                   <div class="space-y-1">
@@ -549,6 +314,58 @@
   <button @click="showMobileLogs = !showMobileLogs" class="lg:hidden fixed bottom-6 right-6 bg-brandRed text-white p-4 rounded-full shadow-lg z-30 flex items-center justify-center border border-red-500 hover:bg-red-700 transition">
     <i data-lucide="terminal" class="h-6 w-6"></i>
   </button>
+
+  <!-- FLOATING REOPEN BUTTON FOR DESKTOP LOGS -->
+  <button x-show="!showDesktopLogs" @click="showDesktopLogs = true" x-cloak class="hidden lg:flex fixed bottom-6 right-6 bg-slate-800 hover:bg-slate-700 text-slate-300 p-3 rounded-full shadow-lg z-30 items-center justify-center border border-slate-700 transition">
+    <i data-lucide="terminal" class="h-5 w-5"></i>
+  </button>
+
+  <!-- CART DRAWER -->
+  <div x-show="showCartDrawer" x-cloak class="fixed inset-0 bg-black/50 z-50 flex justify-end" @click.self="showCartDrawer = false">
+    <div class="bg-white w-full max-w-sm h-full flex flex-col shadow-2xl">
+      <div class="p-4 border-b border-slate-200 flex items-center justify-between shrink-0">
+        <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="shopping-bag" class="text-brandRed h-5 w-5"></i> Shopping Cart</h3>
+        <button @click="showCartDrawer = false" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="h-5 w-5"></i></button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+        <template x-if="cart.length === 0">
+          <div class="text-center py-20 text-slate-400 text-xs">
+            <i data-lucide="shopping-cart" class="h-10 w-10 mx-auto mb-2 text-slate-300"></i>
+            Your cart is empty.
+          </div>
+        </template>
+        <template x-for="(item, index) in cart" :key="index">
+          <div class="flex items-center gap-3 bg-slate-50 p-2 rounded-lg border border-slate-100">
+            <img :src="item.img" class="h-12 w-12 object-cover rounded bg-slate-100 shrink-0">
+            <div class="min-w-0 flex-1">
+              <h4 class="font-bold text-xs text-slate-800 truncate" x-text="item.name"></h4>
+              <p class="text-[11px] text-slate-500" x-text="`${item.price.toLocaleString()} THB`"></p>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button @click="updateQty(index, -1)" class="h-6 w-6 bg-slate-200 rounded text-slate-600 hover:bg-slate-300 flex items-center justify-center font-bold text-xs">-</button>
+              <span class="text-xs font-bold w-4 text-center text-slate-700" x-text="item.qty"></span>
+              <button @click="updateQty(index, 1)" class="h-6 w-6 bg-slate-200 rounded text-slate-600 hover:bg-slate-300 flex items-center justify-center font-bold text-xs">+</button>
+            </div>
+          </div>
+        </template>
+      </div>
+      <div class="border-t border-slate-200 p-4 space-y-3 shrink-0">
+        <div class="flex justify-between items-center text-sm">
+          <span class="text-slate-500 font-medium">Total:</span>
+          <span class="font-black text-brandRed text-lg" x-text="`${getCartTotal().toLocaleString()} THB`"></span>
+        </div>
+        <div x-show="getCartTotal() > 10000" x-cloak class="bg-red-50 text-brandRed text-[10px] p-2 rounded border border-red-100 flex items-center gap-1.5 font-bold">
+          <i data-lucide="shield-check" class="h-4 w-4 shrink-0"></i>
+          <span>High-value order — we'll quickly confirm it's really you before shipping.</span>
+        </div>
+        <button @click="showCartDrawer = false; checkoutCart()" class="w-full py-3 text-white text-xs font-bold rounded-lg transition shadow-md flex items-center justify-center gap-2"
+                :class="cart.length === 0 ? 'bg-slate-300 cursor-not-allowed shadow-none' : 'bg-brandRed hover:bg-red-700'"
+                :disabled="cart.length === 0">
+          <i data-lucide="credit-card" class="h-4 w-4"></i> Proceed to Checkout
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- POP-UP CONFIGURATION MODAL -->
   <div x-show="showConfig" x-cloak class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -624,7 +441,7 @@
     </div>
   </div>
 
-  <!-- POP-UP PROFILE MODAL (username, password, address, phone) -->
+  <!-- POP-UP PROFILE MODAL (name, email, address, phone, password, passkey) -->
   <div x-show="showProfileModal" x-cloak class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col">
       <div class="bg-brandDark text-white p-4 flex items-center justify-between shrink-0">
@@ -683,8 +500,24 @@
           <div id="descope-password-container" x-show="showPasswordSetup" x-cloak></div>
         </div>
 
+        <div class="space-y-1 pt-2 border-t border-slate-100">
+          <label class="block text-xs font-bold text-slate-700 uppercase">Fingerprint / Face Sign-In</label>
+          <template x-if="userSession.hasPasskey && !showPasskeyEnroll">
+            <div class="flex items-center bg-emerald-50 border border-emerald-100 rounded px-3 py-2">
+              <span class="text-xs text-emerald-700 font-semibold flex items-center gap-1.5"><i data-lucide="check-circle" class="h-3.5 w-3.5"></i> Enabled</span>
+            </div>
+          </template>
+          <button @click="enrollPasskey()" x-show="!userSession.hasPasskey && !showPasskeyEnroll" class="w-full py-2 border border-slate-300 hover:border-brandRed hover:text-brandRed text-slate-600 font-semibold rounded-lg text-sm transition flex items-center justify-center gap-2">
+            <i data-lucide="fingerprint" class="h-4 w-4"></i> Turn On Fingerprint / Face Sign-In
+          </button>
+          <div id="descope-passkey-container" x-show="showPasskeyEnroll" x-cloak></div>
+        </div>
+
         <button @click="saveProfile()" class="w-full py-3 bg-brandRed hover:bg-red-700 text-white font-bold rounded-lg text-sm transition mt-2 shadow flex items-center justify-center gap-2">
           <i data-lucide="check" class="h-4.5 w-4.5"></i> <span x-text="profileContext === 'checkout' ? 'Continue to Payment' : 'Save Profile'"></span>
+        </button>
+        <button @click="logoutUser(); closeProfile()" class="w-full py-2 text-slate-500 hover:text-brandRed text-xs font-semibold transition">
+          Sign Out
         </button>
       </div>
     </div>
@@ -710,12 +543,117 @@
     </div>
   </div>
 
+  <!-- POP-UP FLASH SALE (Bot Guard demo) -->
+  <div x-show="showFlashSaleModal" x-cloak class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col">
+      <div class="bg-brandDark text-white p-4 flex items-center justify-between shrink-0">
+        <h3 class="font-bold flex items-center gap-2">
+          <i data-lucide="zap" class="text-brandRed h-5 w-5"></i> Flash Sale
+        </h3>
+        <button @click="showFlashSaleModal = false" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto">
+        <p class="text-sm text-slate-500 mb-6">Limited stock, limited time — grab it before it's gone. We keep bots out so real shoppers get a fair shot.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <!-- Left Controls -->
+          <div class="space-y-6">
+            <div class="bg-slate-50 p-5 rounded-xl border border-slate-100 space-y-4">
+              <h3 class="font-bold text-slate-800 text-sm">Select Buyer Simulation Mode</h3>
+
+              <div class="grid grid-cols-2 gap-3">
+                <button @click="botSimMode = 'human'" class="py-3 px-4 rounded-lg border text-sm font-bold transition flex flex-col items-center gap-2 text-center"
+                        :class="botSimMode === 'human' ? 'border-brandRed bg-red-50 text-brandRed' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'">
+                  <i data-lucide="user" class="h-6 w-6"></i>
+                  <span>Real Human User</span>
+                </button>
+                <button @click="botSimMode = 'bot'" class="py-3 px-4 rounded-lg border text-sm font-bold transition flex flex-col items-center gap-2 text-center"
+                        :class="botSimMode === 'bot' ? 'border-brandRed bg-red-50 text-brandRed' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'">
+                  <i data-lucide="bot" class="h-6 w-6"></i>
+                  <span>Automated Script</span>
+                </button>
+              </div>
+
+              <div class="text-xs text-slate-500 leading-relaxed pt-2">
+                <p x-show="botSimMode === 'human'"><strong class="text-slate-700">Human Mode:</strong> Google reCAPTCHA computes a clean Risk Score (e.g. 0.9). Descope bypasses any verification screens and allows checkout instantly.</p>
+                <p x-show="botSimMode === 'bot'"><strong class="text-slate-700">Bot Mode:</strong> Telemetry detects head-less browser flags. Descope flags the request and forces a strict SMS OTP challenge via 8x8 to prove the user has a real, physical SIM card.</p>
+              </div>
+            </div>
+
+            <div class="border border-slate-100 rounded-xl overflow-hidden bg-slate-900 text-white p-5 flex items-center justify-between shadow">
+              <div class="flex items-center gap-3">
+                <div class="bg-brandRed text-white p-3 rounded-lg animate-pulse">
+                  <i data-lucide="zap" class="h-6 w-6"></i>
+                </div>
+                <div>
+                  <h4 class="font-black text-lg">iPhone 15 Pro Max @ 8 THB!</h4>
+                  <p class="text-xs text-slate-400">Limited to 1 unit. Campaign live right now.</p>
+                </div>
+              </div>
+              <button @click="runFlashSaleSim()" class="bg-brandRed hover:bg-red-700 text-white font-bold text-sm px-6 py-3 rounded-lg shadow-md transition shrink-0">
+                Buy Now
+              </button>
+            </div>
+          </div>
+
+          <!-- Right Results Screen -->
+          <div class="border border-slate-200 rounded-xl p-6 bg-slate-50/50 flex flex-col justify-between min-h-[300px]">
+            <div>
+              <h3 class="font-bold text-slate-800 text-sm">Security Gateway Decision Screen</h3>
+              <p class="text-xs text-slate-500 mt-1">Real-time risk scoring evaluation via Descope flow rules:</p>
+            </div>
+
+            <div class="flex-1 flex flex-col justify-center items-center py-6">
+              <div x-show="!flashSimState" class="text-center text-slate-400">
+                <i data-lucide="play" class="h-12 w-12 mx-auto mb-2 text-slate-300"></i>
+                <p class="text-sm font-medium">Click "Buy Now" to run simulation</p>
+              </div>
+
+              <div x-show="flashSimState === 'running'" class="text-center">
+                <div class="h-10 w-10 border-4 border-brandRed border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                <p class="text-sm font-bold text-slate-700">Evaluating client telemetry...</p>
+                <p class="text-xs text-slate-400 mt-1">Analyzing mouse inputs & headers</p>
+              </div>
+
+              <div x-show="flashSimState === 'human_success'" x-cloak class="text-center">
+                <div class="h-14 w-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <i data-lucide="check" class="h-8 w-8"></i>
+                </div>
+                <h4 class="font-bold text-emerald-800 text-lg">Purchase Order Created!</h4>
+                <p class="text-xs text-slate-600 mt-1">reCAPTCHA Score: <span class="font-bold">0.95 (Low Risk)</span></p>
+                <span class="mt-3 inline-block bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded">Bypassed Verification</span>
+              </div>
+
+              <div x-show="flashSimState === 'bot_intercept'" x-cloak class="text-center max-w-sm">
+                <div class="h-14 w-14 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <i data-lucide="shield-alert" class="h-8 w-8"></i>
+                </div>
+                <h4 class="font-bold text-amber-800 text-lg">Suspicious Access Blocked</h4>
+                <p class="text-xs text-slate-600 mt-1">reCAPTCHA Score: <span class="font-bold">0.12 (High Risk / Bot)</span></p>
+                <p class="text-xs text-amber-700 mt-2">Descope Flow automatically intercepted the script and triggered a step-up SMS OTP via 8x8 to verify physical SIM ownership.</p>
+              </div>
+            </div>
+
+            <div class="border-t border-slate-200 pt-4 flex items-center justify-between text-xs text-slate-500">
+              <span>Integrated Services:</span>
+              <span class="font-semibold text-slate-700 flex items-center gap-1">
+                <span class="h-2 w-2 rounded-full bg-emerald-500"></span> Google reCAPTCHA Enterprise
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     function Shop8App() {
       return {
         // App Configurations
         isConfigured: false,
-        activeTab: 'auth',
         showConfig: false,
         showStepUpModal: false,
         showPasskeyEnroll: false,
@@ -726,7 +664,11 @@
         showPasskeyOffer: false,
         passkeyOfferStarted: false,
         showMobileLogs: false,
-        
+        showDesktopLogs: true,
+        showCartDrawer: false,
+        showFlashSaleModal: false,
+        searchQuery: '',
+
         config: {
           projectId: 'P3GRdY0chO66O5Uv4XgsAZMWd3pD',
           flowId: 'sign-up-or-in',
@@ -767,6 +709,13 @@
           phone: ''
         },
 
+        // Product catalog
+        products: [
+          { id: 1, name: 'Shop8 Ergonomic Wireless Mouse', category: 'Accessories', desc: 'High precision silent mouse with customizable DPI.', price: 890, img: 'wireless_mouse.jpg', badge: null },
+          { id: 2, name: 'Shop8 Gold VIP Annual Pass', category: 'Memberships', desc: 'Unlocks free express shipping and double points.', price: 4900, img: 'vip_gold_card.jpg', badge: null },
+          { id: 3, name: 'Apple iPhone 15 Pro Max', category: 'Electronics', desc: 'Premium titanium finish with our best-in-class protection for high-value orders.', price: 48900, img: 'iphone_15_pro.jpg', badge: 'Extra Protection Included' }
+        ],
+
         // Shopping Cart state
         cart: [],
 
@@ -791,7 +740,7 @@
             this.isConfigured = !!this.config.projectId && !!this.config.supabaseUrl;
             this.tempConfig = { ...this.config };
           }
-          
+
           // Initialize Descope if credentials exist.
           // If we are returning from an OAuth redirect that was started inside
           // the step-up modal, restore the checkout state and remount the
@@ -805,14 +754,13 @@
               this.cart = saved.cart || [];
               this.checkoutItem = saved.checkoutItem || { name: '', price: 0 };
             } catch (_) { /* corrupted state — fall through with defaults */ }
-            this.activeTab = 'shop';
             this.showStepUpModal = true;
             setTimeout(() => this.mountStepUpComponent(), 100);
           } else if (this.isConfigured) {
             sessionStorage.removeItem('shop8_stepup_pending');
             this.mountDescopeComponent();
           }
-          
+
           // 2. Start logs polling
           this.fetchLogs();
           this.pollingInterval = setInterval(() => this.fetchLogs(), 1500);
@@ -827,7 +775,7 @@
             const shadow = wc.shadowRoot;
             if (shadow) {
               if (shadow.querySelector('#shop8-custom-styles')) return;
-              
+
               const style = document.createElement('style');
               style.id = 'shop8-custom-styles';
               style.textContent = `
@@ -845,7 +793,7 @@
               shadow.appendChild(style);
             }
           };
-          
+
           let checkInterval = setInterval(injectStyles, 100);
           setTimeout(() => clearInterval(checkInterval), 4000);
         },
@@ -959,11 +907,11 @@
           localStorage.setItem('Shop8_config', JSON.stringify(this.config));
           this.isConfigured = !!this.config.projectId && !!this.config.supabaseUrl;
           this.showConfig = false;
-          
+
           if (this.isConfigured) {
             this.mountDescopeComponent();
           }
-          
+
           alert('Credentials updated successfully!');
           location.reload();
         },
@@ -1007,7 +955,6 @@
           this.showPasskeyEnroll = true;
           setTimeout(() => {
             this.mountPasskeyFlow('descope-passkey-container', () => {
-              alert("You're all set! Next time you can confirm big orders with just your fingerprint or face.");
               this.showPasskeyEnroll = false;
             });
           }, 100);
@@ -1051,6 +998,18 @@
           return this.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
         },
 
+        cartItemCount() {
+          return this.cart.reduce((sum, item) => sum + item.qty, 0);
+        },
+
+        filteredProducts() {
+          const q = this.searchQuery.trim().toLowerCase();
+          if (!q) return this.products;
+          return this.products.filter(p =>
+            p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
+          );
+        },
+
         hasEmail() {
           return !!(this.userSession.email || this.profile.email.trim());
         },
@@ -1074,6 +1033,7 @@
           this.profileContext = context;
           this.showPasswordSetup = false;
           this.showPhoneVerify = false;
+          this.showPasskeyEnroll = false;
           this.showProfileModal = true;
         },
 
@@ -1081,6 +1041,7 @@
           this.showProfileModal = false;
           this.showPasswordSetup = false;
           this.showPhoneVerify = false;
+          this.showPasskeyEnroll = false;
         },
 
         saveProfile() {
@@ -1218,7 +1179,7 @@
 
         runFlashSaleSim() {
           this.flashSimState = 'running';
-          
+
           setTimeout(() => {
             if (this.botSimMode === 'human') {
               this.flashSimState = 'human_success';
@@ -1231,7 +1192,7 @@
 
         async fetchLogs() {
           if (!this.config.supabaseUrl || !this.config.supabaseAnonKey) return;
-          
+
           try {
             const url = `${this.config.supabaseUrl}/rest/v1/api_logs?select=*&order=created_at.desc&limit=15`;
             const response = await fetch(url, {
@@ -1240,7 +1201,7 @@
                 'Authorization': `Bearer ${this.config.supabaseAnonKey}`
               }
             });
-            
+
             if (response.ok) {
               this.apiLogs = await response.json();
               setTimeout(() => lucide.createIcons(), 50);
@@ -1252,7 +1213,7 @@
 
         async clearConsoleLogs() {
           if (!this.config.supabaseUrl || !this.config.supabaseAnonKey) return;
-          
+
           if (!confirm('Are you sure you want to clear the logs in the database?')) return;
 
           try {
@@ -1264,7 +1225,7 @@
                 'Authorization': `Bearer ${this.config.supabaseAnonKey}`
               }
             });
-            
+
             if (response.ok) {
               this.apiLogs = [];
               alert('Database logs cleared successfully.');
