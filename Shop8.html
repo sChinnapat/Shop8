@@ -155,10 +155,16 @@
                     <div class="h-16 w-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
                       <i data-lucide="user-check" class="h-8 w-8"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-800">Welcome to Shop8!</h3>
+                    <h3 class="text-xl font-bold text-slate-800">Welcome<template x-if="userSession.fullName">, <span x-text="userSession.fullName"></span></template>!</h3>
                     <p class="text-sm text-slate-500 mt-1">Authenticated user session retrieved via Descope JWT.</p>
                     <div class="mt-4 bg-slate-50 p-4 rounded-lg text-left border border-slate-100 text-xs font-mono break-all space-y-1">
-                      <p class="text-slate-400 font-bold">User UID:</p>
+                      <template x-if="userSession.fullName">
+                        <div>
+                          <p class="text-slate-400 font-bold">Full Name:</p>
+                          <p class="text-slate-700" x-text="userSession.fullName"></p>
+                        </div>
+                      </template>
+                      <p class="text-slate-400 font-bold mt-2">User UID:</p>
                       <p class="text-slate-700" x-text="userSession.userId"></p>
                       <p class="text-slate-400 font-bold mt-2">Email/Phone:</p>
                       <p class="text-slate-700" x-text="userSession.userLogin"></p>
@@ -642,7 +648,8 @@
         userSession: {
           isLoggedIn: false,
           userId: '',
-          userLogin: ''
+          userLogin: '',
+          fullName: ''
         },
 
         // Checkout states
@@ -733,8 +740,9 @@
             this.userSession.isLoggedIn = true;
             this.userSession.userId = e.detail.user.userId;
             this.userSession.userLogin = e.detail.user.email || e.detail.user.phone || 'Authenticated User';
+            this.userSession.fullName = e.detail.user.name || '';
           });
-          
+
           wc.addEventListener('error', (e) => {
             console.error('Login error:', e.detail);
           });
@@ -758,6 +766,7 @@
           this.userSession.isLoggedIn = false;
           this.userSession.userId = '';
           this.userSession.userLogin = '';
+          this.userSession.fullName = '';
           this.mountDescopeComponent();
         },
 
