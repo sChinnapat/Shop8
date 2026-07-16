@@ -63,30 +63,29 @@
       <span>shop</span><span class="text-white bg-black/20 px-1 rounded ml-0.5">8</span>
     </div>
 
-    <!-- Search (only once signed in) -->
-    <div class="flex-1 flex" x-show="userSession.isLoggedIn" x-cloak>
-      <div class="relative w-full max-w-xl">
-        <input type="text" x-model="searchQuery" placeholder="Search products..." class="w-full rounded-md pl-4 pr-10 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brandRed">
-        <i data-lucide="search" class="h-4 w-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2"></i>
-      </div>
-    </div>
-    <div class="flex-1" x-show="!userSession.isLoggedIn"></div>
-
-    <!-- Right controls -->
-    <div class="flex items-center gap-2 sm:gap-3 shrink-0">
-      <template x-if="userSession.isLoggedIn">
-        <div class="flex items-center gap-2 sm:gap-3">
-          <button @click="showCartDrawer = true" class="relative p-2 hover:bg-slate-800 rounded-md transition">
-            <i data-lucide="shopping-cart" class="h-5 w-5"></i>
-            <span x-show="cart.length > 0" x-text="cartItemCount()" class="absolute -top-1 -right-1 bg-brandRed text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center"></span>
-          </button>
-          <button @click="openProfile('menu')" class="flex items-center gap-1.5 text-xs bg-slate-800 hover:bg-slate-700 pl-2 pr-3 py-1.5 rounded-full transition">
-            <i data-lucide="user" class="h-4 w-4"></i>
-            <span class="hidden sm:inline" x-text="userSession.fullName ? userSession.fullName.split(' ')[0] : 'Account'"></span>
-          </button>
+    <!-- Search + Cart + Profile (grouped together, only once signed in) -->
+    <template x-if="userSession.isLoggedIn">
+      <div class="flex items-center gap-2 sm:gap-3" x-cloak>
+        <div class="relative w-56 sm:w-72">
+          <input type="text" x-model="searchQuery" placeholder="Search products..." class="w-full rounded-md pl-4 pr-10 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brandRed">
+          <i data-lucide="search" class="h-4 w-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2"></i>
         </div>
-      </template>
+        <button @click="showCartDrawer = true" class="relative p-2 hover:bg-slate-800 rounded-md transition">
+          <i data-lucide="shopping-cart" class="h-5 w-5"></i>
+          <span x-show="cart.length > 0" x-text="cartItemCount()" class="absolute -top-1 -right-1 bg-brandRed text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center"></span>
+        </button>
+        <button @click="openProfile('menu')" class="flex items-center gap-1.5 text-xs bg-slate-800 hover:bg-slate-700 pl-2 pr-3 py-1.5 rounded-full transition">
+          <i data-lucide="user" class="h-4 w-4"></i>
+          <span class="hidden sm:inline" x-text="userSession.fullName ? userSession.fullName.split(' ')[0] : 'Account'"></span>
+        </button>
+      </div>
+    </template>
 
+    <!-- Spacer: absorbs all remaining space so the group below is flush with the true right edge -->
+    <div class="flex-1"></div>
+
+    <!-- Right controls (always at the far right edge) -->
+    <div class="flex items-center gap-2 sm:gap-3 shrink-0">
       <span class="hidden md:flex items-center gap-1.5 text-[10px] text-slate-400">
         <span class="h-2 w-2 rounded-full" :class="isConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'"></span>
         <span x-text="isConfigured ? 'Store Online' : 'Setup Required'"></span>
@@ -757,6 +756,7 @@
         apiLogs: [],
         expandedLogs: [],
         pollingInterval: null,
+        sdk: null,
 
         initApp() {
           // 1. Load configuration from localStorage
@@ -771,11 +771,17 @@
             this.tempConfig = { ...this.config };
           }
 
-          // Initialize Descope if credentials exist.
+          // Initialize the Descope Web JS SDK — used to check for an existing
+          // valid session on load (persistTokens: true keeps it in browser
+          // storage across reloads) so a refresh doesn't force a fresh login.
+          if (this.isConfigured) {
+            this.sdk = window.Descope({ projectId: this.config.projectId, persistTokens: true, autoRefresh: true });
+          }
+
           // If we are returning from an OAuth redirect that was started inside
           // the step-up modal, restore the checkout state and remount the
-          // step-up widget so the flow can finish — otherwise mount the
-          // normal login component.
+          // step-up widget so the flow can finish — otherwise check for an
+          // existing session before falling back to the login component.
           const pendingStepUp = sessionStorage.getItem('shop8_stepup_pending');
           const isOAuthReturn = window.location.search.includes('code=') || window.location.search.includes('descope');
           if (this.isConfigured && pendingStepUp && isOAuthReturn) {
@@ -788,7 +794,7 @@
             setTimeout(() => this.mountStepUpComponent(), 100);
           } else if (this.isConfigured) {
             sessionStorage.removeItem('shop8_stepup_pending');
-            this.mountDescopeComponent();
+            this.restoreSessionOrMountLogin();
           }
 
           // 2. Start logs polling
@@ -902,6 +908,33 @@
           }
         },
 
+        // Check for an already-valid session (e.g. after a page refresh) before
+        // falling back to the login widget. Restores the logged-in UI state
+        // directly from the session without making the user sign in again.
+        async restoreSessionOrMountLogin() {
+          try {
+            const token = this.sdk && this.sdk.getSessionToken && this.sdk.getSessionToken();
+            const expired = token ? this.sdk.isJwtExpired(token) : true;
+            if (token && !expired) {
+              const resp = await this.sdk.me();
+              const user = (resp && resp.data) ? resp.data : resp;
+              if (user && (user.userId || user.loginIds)) {
+                this.userSession.isLoggedIn = true;
+                this.userSession.userId = user.userId || '';
+                this.userSession.userLogin = user.email || user.phone || 'Authenticated User';
+                this.userSession.email = user.email || '';
+                this.userSession.phone = user.phone || '';
+                this.userSession.fullName = user.name || '';
+                this.loadCustomerProfile(this.userSession.userId);
+                return;
+              }
+            }
+          } catch (err) {
+            console.error('No existing session to restore:', err);
+          }
+          this.mountDescopeComponent();
+        },
+
         mountDescopeComponent() {
           // Mount main login flow
           const container = document.getElementById('descope-wc-container');
@@ -925,6 +958,9 @@
               userId: e.detail.user.userId,
               loginId: this.userSession.userLogin
             });
+            // Sync the SDK's session state so getSessionToken() reflects
+            // this new login on the next page load.
+            if (this.sdk && this.sdk.refresh) this.sdk.refresh();
           });
 
           wc.addEventListener('error', (e) => {
@@ -947,6 +983,7 @@
         },
 
         logoutUser() {
+          if (this.sdk && this.sdk.logout) this.sdk.logout();
           this.userSession.isLoggedIn = false;
           this.userSession.userId = '';
           this.userSession.userLogin = '';
@@ -1160,6 +1197,7 @@
               this.userSession.phone = e.detail.user.phone || '';
               this.userSession.fullName = e.detail.user.name || '';
               this.loadCustomerProfile(e.detail.user.userId);
+              if (this.sdk && this.sdk.refresh) this.sdk.refresh();
             }
             // Strip OAuth callback params left over from the redirect
             if (window.location.search) history.replaceState(null, '', window.location.pathname);
