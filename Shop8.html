@@ -377,6 +377,24 @@
         </div>
 
         <div class="space-y-1.5" x-show="cart.length > 0">
+          <div class="flex items-center justify-between">
+            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Shipping Address</label>
+            <button type="button" x-show="!editingCartAddress" @click="editingCartAddress = true" class="text-slate-400 hover:text-brandRed p-0.5" title="Edit address">
+              <i data-lucide="pencil" class="h-3 w-3"></i>
+            </button>
+          </div>
+          <template x-if="!editingCartAddress">
+            <p class="text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 leading-snug" x-text="shippingInfo.address.trim() || 'No address on file — tap the pencil to add one.'"></p>
+          </template>
+          <template x-if="editingCartAddress">
+            <div class="space-y-1.5">
+              <textarea x-model="shippingInfo.address" rows="2" placeholder="House no., street, sub-district, district, province, postal code" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-brandRed focus:outline-none"></textarea>
+              <button type="button" @click="saveCustomerProfile(); editingCartAddress = false" class="text-xs font-bold text-brandRed hover:text-red-700">Save</button>
+            </div>
+          </template>
+        </div>
+
+        <div class="space-y-1.5" x-show="cart.length > 0">
           <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Payment Method</label>
           <template x-for="pm in paymentMethods" :key="pm.id">
             <button type="button" @click="selectedPaymentMethodId = pm.id"
@@ -792,6 +810,7 @@
           { id: 2, brand: 'Mastercard', last4: '8831', label: 'Mastercard •••• 8831', primary: false }
         ],
         selectedPaymentMethodId: 1,
+        editingCartAddress: false,
 
         // Flash Sale mode
         botSimMode: 'human',
