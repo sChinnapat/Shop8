@@ -64,8 +64,8 @@
     </div>
 
     <!-- Search (only once signed in) -->
-    <div class="flex-1 max-w-xl" x-show="userSession.isLoggedIn" x-cloak>
-      <div class="relative">
+    <div class="flex-1 flex" x-show="userSession.isLoggedIn" x-cloak>
+      <div class="relative w-full max-w-xl">
         <input type="text" x-model="searchQuery" placeholder="Search products..." class="w-full rounded-md pl-4 pr-10 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brandRed">
         <i data-lucide="search" class="h-4 w-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2"></i>
       </div>
@@ -1013,7 +1013,7 @@
           } else {
             this.cart.push({ name, price, img, qty: 1 });
           }
-          this.showDesktopLogs = true; // Reveal the logs panel so the activity is visible
+          this.showCartDrawer = true; // Show the cart so the added item is visible
           setTimeout(() => lucide.createIcons(), 50);
         },
 
