@@ -137,7 +137,7 @@
   </header>
 
   <!-- MAIN WORKSPACE -->
-  <main class="flex-1 flex flex-col lg:flex-row min-h-0">
+  <main class="flex-1 flex flex-col lg:flex-row min-h-0 transition-all duration-300" :class="showDesktopLogs ? 'lg:pr-[400px]' : ''">
 
     <!-- LEFT SIDE: ACTIVE DEMO INTERFACE -->
     <section class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
@@ -247,8 +247,8 @@
     <!-- RIGHT SIDE: REAL-TIME API CONSOLE LOGS -->
     <div x-show="showMobileLogs" @click="showMobileLogs = false" x-cloak class="fixed inset-0 bg-black/60 backdrop-blur-xs z-30 lg:hidden" x-transition.opacity></div>
 
-    <aside class="fixed lg:static inset-y-0 right-0 z-40 w-80 lg:w-[400px] bg-slate-900 border-l border-slate-800 flex flex-col text-slate-200 transition-transform duration-300 transform lg:translate-x-0"
-           :class="[showMobileLogs ? 'translate-x-0 shadow-2xl' : 'translate-x-full lg:translate-x-0', !showDesktopLogs ? 'lg:hidden' : '']">
+    <aside class="fixed inset-y-0 right-0 z-[60] w-80 lg:w-[400px] bg-slate-900 border-l border-slate-800 flex flex-col text-slate-200 transition-transform duration-300 transform"
+           :class="[showMobileLogs ? 'translate-x-0 shadow-2xl' : (showDesktopLogs ? 'translate-x-0' : 'translate-x-full') ]">
 
       <!-- Console Header -->
       <div class="p-4 border-b border-slate-800 flex items-center justify-between shrink-0 bg-slate-950">
