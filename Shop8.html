@@ -175,6 +175,20 @@
         <!-- STOREFRONT VIEW (shown once signed in) -->
         <div x-show="userSession.isLoggedIn" x-cloak class="space-y-6">
 
+          <!-- OAuth profile card: exactly what Descope pulled from the social provider on this login -->
+          <div x-show="oauthProfileCard" x-cloak class="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-3 shadow-sm">
+            <img x-show="oauthProfileCard && oauthProfileCard.picture" :src="oauthProfileCard && oauthProfileCard.picture" class="h-11 w-11 rounded-full object-cover shrink-0 border border-slate-200">
+            <div x-show="!(oauthProfileCard && oauthProfileCard.picture)" class="h-11 w-11 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center shrink-0">
+              <i data-lucide="user" class="h-5 w-5"></i>
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide" x-text="'Signed in via ' + (oauthProfileCard ? oauthProfileCard.provider : '')"></p>
+              <p class="text-sm font-bold text-slate-800 truncate" x-text="oauthProfileCard ? oauthProfileCard.name : ''"></p>
+              <p class="text-xs text-slate-500 truncate" x-text="oauthProfileCard ? oauthProfileCard.email : ''"></p>
+            </div>
+            <button @click="oauthProfileCard = null" class="text-slate-300 hover:text-slate-500 shrink-0"><i data-lucide="x" class="h-4 w-4"></i></button>
+          </div>
+
           <!-- Flash Sale promo banner -->
           <button @click="showFlashSaleModal = true" class="w-full text-left bg-gradient-to-r from-brandDark to-slate-800 rounded-xl p-4 sm:p-5 flex items-center justify-between shadow-md hover:shadow-lg transition group">
             <div class="flex items-center gap-4 min-w-0">
@@ -744,6 +758,7 @@
         searchQuery: '',
         toast: { show: false, message: '', type: 'info' },
         toastTimer: null,
+        oauthProfileCard: null, // { provider, name, email, picture } pulled from Descope on this login — no internal IDs
 
         config: {
           projectId: 'P3GRdY0chO66O5Uv4XgsAZMWd3pD',
@@ -877,6 +892,27 @@
           this.toastTimer = setTimeout(() => { this.toast.show = false; }, 3500);
         },
 
+        // Surface exactly what Descope handed back from the social provider
+        // (name/email/picture) on this login — deliberately excludes any
+        // internal Descope/Supabase ID.
+        applyOauthProfileCard(user) {
+          if (!user) return;
+          const ids = user.loginIds || [];
+          const provider = ids.some(id => id.startsWith('google-')) ? 'Google'
+                          : ids.some(id => id.startsWith('facebook-')) ? 'Facebook'
+                          : null;
+          if (!provider || (!user.name && !user.email)) {
+            this.oauthProfileCard = null;
+            return;
+          }
+          this.oauthProfileCard = {
+            provider,
+            name: user.name || '',
+            email: user.email || '',
+            picture: user.picture || ''
+          };
+        },
+
         styleShadowElements(wc) {
           if (!wc) return;
           const injectStyles = () => {
@@ -998,6 +1034,7 @@
                 if (this.userSession.email) this.profile.email = this.userSession.email;
                 this.userSession.phone = user.phone || '';
                 this.userSession.fullName = user.name || '';
+                this.applyOauthProfileCard(user);
                 this.loadCustomerProfile(this.userSession.userId);
                 return;
               }
@@ -1027,6 +1064,7 @@
             if (this.userSession.email) this.profile.email = this.userSession.email;
             this.userSession.phone = e.detail.user.phone || '';
             this.userSession.fullName = e.detail.user.name || '';
+            this.applyOauthProfileCard(e.detail.user);
             this.loadCustomerProfile(e.detail.user.userId);
             this.logToSupabase('LOGIN_SUCCESS', 'User signed up or logged in', {
               userId: e.detail.user.userId,
@@ -1067,6 +1105,7 @@
           this.userSession.hasPasskey = false;
           this.userSession.hasPassword = false;
           this.profile.email = '';
+          this.oauthProfileCard = null;
           this.showPasskeyEnroll = false;
           this.showPhoneVerify = false;
           this.mountDescopeComponent();
