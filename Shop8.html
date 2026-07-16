@@ -375,6 +375,24 @@
           <i data-lucide="shield-check" class="h-4 w-4 shrink-0"></i>
           <span>High-value order — we'll quickly confirm it's really you before shipping.</span>
         </div>
+
+        <div class="space-y-1.5" x-show="cart.length > 0">
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Payment Method</label>
+          <template x-for="pm in paymentMethods" :key="pm.id">
+            <button type="button" @click="selectedPaymentMethodId = pm.id"
+                    class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border text-left transition"
+                    :class="selectedPaymentMethodId === pm.id ? 'border-brandRed bg-red-50/60 ring-1 ring-brandRed' : 'border-slate-200 hover:border-slate-300'">
+              <span class="h-4 w-4 rounded-full border-2 shrink-0 flex items-center justify-center"
+                    :class="selectedPaymentMethodId === pm.id ? 'border-brandRed' : 'border-slate-300'">
+                <span class="h-2 w-2 rounded-full bg-brandRed" x-show="selectedPaymentMethodId === pm.id"></span>
+              </span>
+              <i data-lucide="credit-card" class="h-4 w-4 text-slate-400 shrink-0"></i>
+              <span class="text-xs font-semibold text-slate-700 flex-1" x-text="pm.label"></span>
+              <span x-show="pm.primary" class="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0.5">PRIMARY</span>
+            </button>
+          </template>
+        </div>
+
         <button @click="showCartDrawer = false; checkoutCart()" class="w-full py-3 text-white text-xs font-bold rounded-lg transition shadow-md flex items-center justify-center gap-2"
                 :class="cart.length === 0 ? 'bg-slate-300 cursor-not-allowed shadow-none' : 'bg-brandRed hover:bg-red-700'"
                 :disabled="cart.length === 0">
@@ -767,6 +785,13 @@
 
         // Shopping Cart state
         cart: [],
+
+        // Mock saved payment methods (demo only — no real card data)
+        paymentMethods: [
+          { id: 1, brand: 'Visa', last4: '4242', label: 'Visa •••• 4242', primary: true },
+          { id: 2, brand: 'Mastercard', last4: '8831', label: 'Mastercard •••• 8831', primary: false }
+        ],
+        selectedPaymentMethodId: 1,
 
         // Flash Sale mode
         botSimMode: 'human',
