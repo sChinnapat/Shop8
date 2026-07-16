@@ -1084,6 +1084,9 @@
           wc.addEventListener('success', () => {
             this.userSession.hasPasskey = true;
             this.saveCustomerProfile();
+            this.logToSupabase('PASSKEY_ENROLLED', 'User enrolled a passkey for fingerprint/face sign-in', {
+              loginId: this.userSession.userLogin
+            });
             container.innerHTML = '';
             if (onDone) onDone();
           });
@@ -1218,6 +1221,9 @@
               this.showPasswordSetup = false;
               container.innerHTML = '';
               this.saveCustomerProfile();
+              this.logToSupabase('PASSWORD_SET', 'User set or updated their account password', {
+                loginId: this.userSession.userLogin
+              });
             });
             wc.addEventListener('error', (e) => {
               console.error('Password setup failed:', e.detail);
@@ -1243,6 +1249,10 @@
               this.showPhoneVerify = false;
               container.innerHTML = '';
               this.saveCustomerProfile();
+              this.logToSupabase('PHONE_VERIFIED', 'User verified a phone number', {
+                loginId: this.userSession.userLogin,
+                phone: this.userSession.phone
+              });
             });
             wc.addEventListener('error', (e) => {
               console.error('Phone verification failed:', e.detail);
@@ -1309,6 +1319,11 @@
           } else {
             // Low value checkout succeeds instantly
             this.showToast(`Order placed! Thanks for shopping with us — your order is on its way.`, 'success');
+            this.logToSupabase('ORDER_PLACED', 'Order placed and confirmed', {
+              loginId: this.userSession.userLogin,
+              item: name,
+              amount: price
+            });
             this.cart = []; // Empty the cart on success
           }
         },
