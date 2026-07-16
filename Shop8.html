@@ -74,15 +74,6 @@
 
     <!-- Right controls -->
     <div class="flex items-center gap-2 sm:gap-3 shrink-0">
-      <span class="hidden md:flex items-center gap-1.5 text-[10px] text-slate-400">
-        <span class="h-2 w-2 rounded-full" :class="isConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'"></span>
-        <span x-text="isConfigured ? 'Store Online' : 'Setup Required'"></span>
-      </span>
-
-      <button @click="showDesktopLogs = !showDesktopLogs" title="Toggle API Logs" class="hidden lg:flex items-center justify-center text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded border border-slate-700 transition">
-        <i data-lucide="terminal" class="h-3.5 w-3.5"></i>
-      </button>
-
       <template x-if="userSession.isLoggedIn">
         <div class="flex items-center gap-2 sm:gap-3">
           <button @click="showCartDrawer = true" class="relative p-2 hover:bg-slate-800 rounded-md transition">
@@ -95,6 +86,15 @@
           </button>
         </div>
       </template>
+
+      <span class="hidden md:flex items-center gap-1.5 text-[10px] text-slate-400">
+        <span class="h-2 w-2 rounded-full" :class="isConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'"></span>
+        <span x-text="isConfigured ? 'Store Online' : 'Setup Required'"></span>
+      </span>
+
+      <button @click="showDesktopLogs = !showDesktopLogs" title="Toggle API Logs" class="hidden lg:flex items-center justify-center text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded border border-slate-700 transition">
+        <i data-lucide="terminal" class="h-3.5 w-3.5"></i>
+      </button>
 
       <button @click="showConfig = true" title="Settings" class="flex items-center justify-center text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded border border-slate-700 transition">
         <i data-lucide="settings" class="h-3.5 w-3.5"></i>
@@ -1013,6 +1013,7 @@
           } else {
             this.cart.push({ name, price, img, qty: 1 });
           }
+          this.showDesktopLogs = true; // Reveal the logs panel so the activity is visible
           setTimeout(() => lucide.createIcons(), 50);
         },
 
