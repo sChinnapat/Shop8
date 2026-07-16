@@ -18,6 +18,12 @@
   <script src="https://descopecdn.com/npm/@descope/web-component@3.69.2/dist/index.js"></script>
   <script src="https://descopecdn.com/npm/@descope/web-js-sdk@1.50.6/dist/index.umd.js"></script>
 
+  <!-- 8x8 Jitsi Meet External API SDK -->
+  <script src="https://8x8.vc/external_api.js"></script>
+
+  <!-- Supabase JS Client (used for real-time queue signaling) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <script>
     tailwind.config = {
       theme: {
@@ -104,6 +110,17 @@
 
     <!-- Right controls (always at the far right edge) -->
     <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+      <!-- VIP Live Video Agent Button -->
+      <button @click="startVIPVideoCall()" x-show="userSession.isLoggedIn" x-cloak
+              class="flex items-center gap-2 text-xs bg-brandRed hover:bg-red-700 text-white font-extrabold px-3.5 py-1.5 rounded-full border border-red-500 hover:border-red-600 transition shadow-md hover:scale-105 active:scale-95 duration-150 mr-2">
+        <span class="relative flex h-2 w-2 shrink-0">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+        </span>
+        <i data-lucide="video" class="h-3.5 w-3.5"></i>
+        <span>VIP Live Video</span>
+      </button>
+
       <span class="hidden md:flex items-center gap-1.5 text-[10px] text-slate-400">
         <span class="h-2 w-2 rounded-full" :class="isConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'"></span>
         <span x-text="isConfigured ? 'Store Online' : 'Setup Required'"></span>
@@ -422,8 +439,9 @@
 
   <!-- POP-UP CONFIGURATION MODAL -->
   <div x-show="showConfig" x-cloak class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden" @click.away="showConfig = false">
-      <div class="bg-brandDark text-white p-4 flex items-center justify-between">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col" @click.away="showConfig = false">
+      <!-- Header -->
+      <div class="bg-brandDark text-white p-4 flex items-center justify-between shrink-0 border-b border-slate-800">
         <h3 class="font-bold flex items-center gap-2">
           <i data-lucide="settings" class="text-brandRed"></i> Shop8 Configuration Credentials
         </h3>
@@ -432,7 +450,8 @@
         </button>
       </div>
 
-      <div class="p-6 space-y-4">
+      <!-- Scrollable Body Container -->
+      <div class="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-grow">
         <!-- Project ID input -->
         <div class="space-y-1">
           <label class="block text-xs font-bold text-slate-700 uppercase">Descope Project ID</label>
@@ -481,9 +500,29 @@
           </div>
         </div>
 
-        <!-- Save Button -->
-        <button @click="saveCredentials()" class="w-full py-3 bg-brandRed hover:bg-red-700 text-white font-bold rounded-lg text-sm transition mt-2 shadow flex items-center justify-center gap-2">
-          <i data-lucide="check" class="h-4.5 w-4.5"></i> Save & Apply Settings
+        <!-- 8x8 Jitsi Meet / JaaS credentials -->
+        <div class="border-t border-slate-100 pt-4 space-y-4">
+          <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wide">8x8 JaaS Credentials</p>
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-slate-700 uppercase">JaaS App ID</label>
+            <input type="text" x-model="tempConfig.jaasAppId" placeholder="e.g. f83de88b64664d749a24fa77a5a7dcb8" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-slate-700 uppercase">JaaS Encoded JWT Token</label>
+            <textarea x-model="tempConfig.jaasJwt" rows="3" placeholder="Paste your 2-hour Encoded JWT token here..." class="w-full border border-slate-300 rounded px-3 py-2 text-[10px] focus:border-brandRed focus:outline-none font-mono resize-none"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sticky Footer Actions -->
+      <div class="p-4 bg-slate-50 border-t border-slate-150 flex items-center gap-2 shrink-0">
+        <button @click="showConfig = false" type="button"
+                class="flex-1 py-2.5 bg-white hover:bg-slate-50 text-slate-700 font-bold rounded-lg text-xs transition border border-slate-300 shadow-sm">
+          Cancel
+        </button>
+        <button @click="saveCredentials()" type="button"
+                class="flex-grow-[2] py-2.5 bg-brandRed hover:bg-red-700 text-white font-bold rounded-lg text-xs transition shadow-md flex items-center justify-center gap-2">
+          <i data-lucide="check" class="h-4 w-4"></i> Save & Apply Settings
         </button>
       </div>
     </div>
@@ -593,6 +632,33 @@
         <button @click="logoutUser(); closeProfile()" class="w-full py-2 text-slate-500 hover:text-brandRed text-xs font-semibold transition">
           Sign Out
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIP LIVE VIDEO MODAL -->
+  <div x-show="showJitsiModal" x-cloak class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-950 rounded-xl shadow-2xl max-w-4xl w-full border border-slate-800 overflow-hidden flex flex-col h-[85vh]">
+      <!-- Header -->
+      <div class="bg-brandDark px-4 py-3 flex items-center justify-between border-b border-slate-800">
+        <h3 class="font-bold text-white flex items-center gap-2 text-sm sm:text-base">
+          <i data-lucide="video" class="text-red-500 animate-pulse"></i> Shop8 VIP Live Video Support
+        </h3>
+        <button @click="cancelVIPVideoCall()" class="text-slate-400 hover:text-white transition">
+          <i data-lucide="x" class="h-5 w-5"></i>
+        </button>
+      </div>
+
+      <!-- Video Call Container -->
+      <div id="shop8-jitsi-container" class="flex-grow flex items-center justify-center bg-slate-900 text-slate-500 text-sm relative h-full">
+        <!-- Calling screen (Spinner) -->
+        <div id="shop8-jitsi-calling" class="text-center p-6 flex flex-col items-center justify-center space-y-4">
+          <div class="w-14 h-14 rounded-full border-4 border-red-500 border-t-transparent animate-spin"></div>
+          <div>
+            <p class="font-bold text-red-500 text-base">Calling VIP Live Agent...</p>
+            <p class="text-xs text-slate-400 mt-1">Please wait for an available agent to answer.</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -753,7 +819,9 @@
           passwordFlowId: 'set-password-strict',
           phoneVerifyFlowId: 'verify-phone-strict',
           supabaseUrl: 'https://jcmeqobxcetnvpypaarh.supabase.co',
-          supabaseAnonKey: 'sb_publishable_ccxyvDY2f3IxzhjdGm7TnA_JIQGlu4S'
+          supabaseAnonKey: 'sb_publishable_ccxyvDY2f3IxzhjdGm7TnA_JIQGlu4S',
+          jaasAppId: 'vpaas-magic-cookie-f83de88b64664d749a24fa77a5a7dcb8',
+          jaasJwt: 'eyJraWQiOiJ2cGFhcy1tYWdpYy1jb29raWUtZjgzZGU4OGI2NDY2NGQ3NDlhMjRmYTc3YTVhN2RjYjgvYTdiZjk4LVNBTVBMRV9BUFAiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiJqaXRzaSIsImlzcyI6ImNoYXQiLCJpYXQiOjE3ODQyMDE0NDIsImV4cCI6MTc4NDIwODY0MiwibmJmIjoxNzg0MjAxNDM3LCJzdWIiOiJ2cGFhcy1tYWdpYy1jb29raWUtZjgzZGU4OGI2NDY2NGQ3NDlhMjRmYTc3YTVhN2RjYjgiLCJjb250ZXh0Ijp7ImZlYXR1cmVzIjp7ImxpdmVzdHJlYW1pbmciOnRydWUsImZpbGUtdXBsb2FkIjp0cnVlLCJvdXRib3VuZC1jYWxsIjp0cnVlLCJzaXAtb3V0Ym91bmQtY2FsbCI6ZmFsc2UsInRyYW5zY3JpcHRpb24iOnRydWUsImxpc3QtdmlzaXRvcnMiOmZhbHNlLCJyZWNvcmRpbmciOnRydWUsImZsaXAiOmZhbHNlfSwidXNlciI6eyJoaWRkZW4tZnJvbS1yZWNvcmRlciI6ZmFsc2UsIm1vZGVyYXRvciI6dHJ1ZSwibmFtZSI6IkFnZW50IiwiaWQiOiJnb29nbGUtb2F1dGgyfDEwMjM4NjkzNTUzNjk0NTU4MTg2NCIsImF2YXRhciI6IiIsImVtYWlsIjoiY25wbmV3QGdtYWlsLmNvbSJ9fSwicm9vbSI6IioifQ.g2d51xaGHipDl12E6aHsqS-4ebLVpvzLerml6xNGVz7dpJFCkhmiAaGOve8qn1k4ACh_YbsOTSQtEUPEkwbMQekfK3ojB76LDThQf0gtwppTlQwRi22h304VtfJR-ZqsIjLwqGDkOTGrsZAbCIVM16zyOUt7TfjRnEHC-q6aLT1f5rdNSmHRKzbhm2c0wjmqQXqUU_oVS9wdnAMjWBUVP9_uJitodTj-H1G3u8khpfKQW02edxoq4hCxiytS4Y1efdSBLx1HyXTWLv7sa2R8ZBiSKGQ3bTnMErhE4JUmWaqGSA0XT5HQa0EnM_pLBgiuQ9voFTzntWSWR3ImVXMA4A'
         },
 
         tempConfig: {
@@ -764,7 +832,9 @@
           passwordFlowId: 'set-password-strict',
           phoneVerifyFlowId: 'verify-phone-strict',
           supabaseUrl: 'https://jcmeqobxcetnvpypaarh.supabase.co',
-          supabaseAnonKey: 'sb_publishable_ccxyvDY2f3IxzhjdGm7TnA_JIQGlu4S'
+          supabaseAnonKey: 'sb_publishable_ccxyvDY2f3IxzhjdGm7TnA_JIQGlu4S',
+          jaasAppId: 'vpaas-magic-cookie-f83de88b64664d749a24fa77a5a7dcb8',
+          jaasJwt: 'eyJraWQiOiJ2cGFhcy1tYWdpYy1jb29raWUtZjgzZGU4OGI2NDY2NGQ3NDlhMjRmYTc3YTVhN2RjYjgvYTdiZjk4LVNBTVBMRV9BUFAiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiJqaXRzaSIsImlzcyI6ImNoYXQiLCJpYXQiOjE3ODQyMDE0NDIsImV4cCI6MTc4NDIwODY0MiwibmJmIjoxNzg0MjAxNDM3LCJzdWIiOiJ2cGFhcy1tYWdpYy1jb29raWUtZjgzZGU4OGI2NDY2NGQ3NDlhMjRmYTc3YTVhN2RjYjgiLCJjb250ZXh0Ijp7ImZlYXR1cmVzIjp7ImxpdmVzdHJlYW1pbmciOnRydWUsImZpbGUtdXBsb2FkIjp0cnVlLCJvdXRib3VuZC1jYWxsIjp0cnVlLCJzaXAtb3V0Ym91bmQtY2FsbCI6ZmFsc2UsInRyYW5zY3JpcHRpb24iOnRydWUsImxpc3QtdmlzaXRvcnMiOmZhbHNlLCJyZWNvcmRpbmciOnRydWUsImZsaXAiOmZhbHNlfSwidXNlciI6eyJoaWRkZW4tZnJvbS1yZWNvcmRlciI6ZmFsc2UsIm1vZGVyYXRvciI6dHJ1ZSwibmFtZSI6IkFnZW50IiwiaWQiOiJnb29nbGUtb2F1dGgyfDEwMjM4NjkzNTUzNjk0NTU4MTg2NCIsImF2YXRhciI6IiIsImVtYWlsIjoiY25wbmV3QGdtYWlsLmNvbSJ9fSwicm9vbSI6IioifQ.g2d51xaGHipDl12E6aHsqS-4ebLVpvzLerml6xNGVz7dpJFCkhmiAaGOve8qn1k4ACh_YbsOTSQtEUPEkwbMQekfK3ojB76LDThQf0gtwppTlQwRi22h304VtfJR-ZqsIjLwqGDkOTGrsZAbCIVM16zyOUt7TfjRnEHC-q6aLT1f5rdNSmHRKzbhm2c0wjmqQXqUU_oVS9wdnAMjWBUVP9_uJitodTj-H1G3u8khpfKQW02edxoq4hCxiytS4Y1efdSBLx1HyXTWLv7sa2R8ZBiSKGQ3bTnMErhE4JUmWaqGSA0XT5HQa0EnM_pLBgiuQ9voFTzntWSWR3ImVXMA4A'
         },
 
         // User Sessions
@@ -821,6 +891,13 @@
         expandedLogs: [],
         pollingInterval: null,
         sdk: null,
+
+        // Jitsi VIP Video Call state
+        showJitsiModal: false,
+        activeCallId: null,
+        realtimeSubscription: null,
+        supabaseClient: null,
+        jitsiAPI: null,
 
         initApp() {
           // 1. Load configuration from localStorage
@@ -1054,6 +1131,168 @@
 
           this.showToast('Credentials updated successfully!', 'success');
           setTimeout(() => location.reload(), 1200);
+        },
+
+        async startVIPVideoCall() {
+          if (!this.config.supabaseUrl || !this.config.supabaseAnonKey) {
+            this.showToast("Supabase is not configured yet.", "error");
+            return;
+          }
+
+          // Initialize Supabase Client if not already done
+          if (!this.supabaseClient) {
+            this.supabaseClient = supabase.createClient(this.config.supabaseUrl, this.config.supabaseAnonKey);
+          }
+
+          // Show the modal in loading (Calling...) state
+          this.showJitsiModal = true;
+          
+          // Clear any previous Jitsi instances
+          if (this.jitsiAPI) {
+            this.jitsiAPI.dispose();
+            this.jitsiAPI = null;
+          }
+          
+          // Put back calling spinner
+          setTimeout(() => {
+            const container = document.getElementById('shop8-jitsi-container');
+            if (container) {
+              container.innerHTML = `
+                <div id="shop8-jitsi-calling" class="text-center p-6 flex flex-col items-center justify-center space-y-4">
+                  <div class="w-14 h-14 rounded-full border-4 border-red-500 border-t-transparent animate-spin"></div>
+                  <div>
+                    <p class="font-bold text-red-500 text-base">Calling VIP Live Agent...</p>
+                    <p class="text-xs text-slate-400 mt-1">Please wait for an available agent to answer.</p>
+                  </div>
+                </div>
+              `;
+            }
+          }, 100);
+
+          // Room ID and Customer Name
+          const randomRoomId = "Shop8_VIP_" + Math.floor(Math.random() * 1000000);
+          const customerName = this.userSession.fullName || "VIP Customer";
+
+          // 1. Insert Call Queue request row into Supabase database
+          try {
+            const { data, error } = await this.supabaseClient
+              .from('call_queue')
+              .insert([{ room_id: randomRoomId, status: 'waiting', customer_name: customerName }])
+              .select();
+
+            if (error) throw error;
+
+            const insertedRow = data[0];
+            this.activeCallId = insertedRow.id;
+
+            // 2. Subscribe to Real-Time Updates on this specific call queue row
+            this.realtimeSubscription = this.supabaseClient
+              .channel(`call_channel_${this.activeCallId}`)
+              .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'call_queue', filter: `id=eq.${this.activeCallId}` },
+                (payload) => {
+                  console.log('Real-time update received:', payload);
+                  const updatedRow = payload.new;
+                  
+                  // If Agent accepts the call, mount Jitsi!
+                  if (updatedRow.status === 'active') {
+                    this.connectToJitsi(randomRoomId, customerName);
+                  }
+                }
+              )
+              .subscribe();
+
+            console.log(`Call queue initiated for ${customerName} in room: ${randomRoomId}`);
+
+          } catch (err) {
+            console.error("Error inserting queue request:", err);
+            this.showToast("Failed to connect to queue system.", "error");
+            this.showJitsiModal = false;
+          }
+        },
+
+        connectToJitsi(roomId, customerName) {
+          // Clean subscription
+          if (this.realtimeSubscription) {
+            this.realtimeSubscription.unsubscribe();
+            this.realtimeSubscription = null;
+          }
+
+          // Clean Container viewport
+          const container = document.getElementById('shop8-jitsi-container');
+          if (container) container.innerHTML = "";
+
+          let formattedAppId = this.config.jaasAppId || '';
+          if (!formattedAppId.startsWith("vpaas-magic-cookie-") && formattedAppId) {
+            formattedAppId = "vpaas-magic-cookie-" + formattedAppId;
+          }
+
+          const domain = "8x8.vc";
+          const options = {
+            roomName: `${formattedAppId}/${roomId}`,
+            jwt: this.config.jaasJwt,
+            width: "100%",
+            height: "100%",
+            parentNode: document.querySelector('#shop8-jitsi-container'),
+            userInfo: { displayName: customerName },
+            configOverwrite: {
+              prejoinPageEnabled: false,
+              prejoinConfig: { enabled: false },
+              startWithAudioMuted: true,
+              startWithVideoMuted: true
+            }
+          };
+
+          try {
+            this.jitsiAPI = new JitsiMeetExternalAPI(domain, options);
+            
+            // Force overriding the JWT display name
+            this.jitsiAPI.addEventListener('videoConferenceJoined', () => {
+              console.log(`Setting displayName to: ${customerName}`);
+              this.jitsiAPI.executeCommand('displayName', customerName);
+            });
+
+            // Set hangup listener
+            this.jitsiAPI.addEventListener('videoConferenceLeft', () => {
+              this.cancelVIPVideoCall();
+            });
+          } catch (err) {
+            console.error("Error starting Jitsi in Shop8:", err);
+            this.showToast("Failed to load video stream.", "error");
+          }
+        },
+
+        async cancelVIPVideoCall() {
+          // Unsubscribe real-time
+          if (this.realtimeSubscription) {
+            this.realtimeSubscription.unsubscribe();
+            this.realtimeSubscription = null;
+          }
+
+          // If in a call, set status to ended in Supabase
+          if (this.activeCallId && this.supabaseClient) {
+            try {
+              await this.supabaseClient
+                .from('call_queue')
+                .update({ status: 'ended' })
+                .eq('id', this.activeCallId);
+            } catch (err) {
+              console.error("Error ending call queue record:", err);
+            }
+            this.activeCallId = null;
+          }
+
+          // Close modal
+          this.showJitsiModal = false;
+
+          // Dispose Jitsi
+          if (this.jitsiAPI) {
+            this.jitsiAPI.dispose();
+            this.jitsiAPI = null;
+          }
+          
+          this.showToast("Call ended.", "info");
         },
 
         logoutUser() {
