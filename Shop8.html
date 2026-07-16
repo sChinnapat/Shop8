@@ -438,7 +438,7 @@
   </div>
 
   <!-- POP-UP CONFIGURATION MODAL -->
-  <div x-show="showConfig" x-cloak class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div x-show="showConfig" x-cloak class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300" :class="showDesktopLogs ? 'lg:right-[400px]' : ''">
     <div class="bg-white rounded-xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col" @click.away="showConfig = false">
       <!-- Header -->
       <div class="bg-brandDark text-white p-4 flex items-center justify-between shrink-0 border-b border-slate-800">
@@ -529,7 +529,7 @@
   </div>
 
   <!-- POP-UP STEP-UP VERIFICATION MODAL -->
-  <div x-show="showStepUpModal" x-cloak class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div x-show="showStepUpModal" x-cloak class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300" :class="showDesktopLogs ? 'lg:right-[400px]' : ''">
     <div class="bg-white rounded-xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
       <div class="bg-red-50 p-4 border-b border-red-100 flex items-center justify-between">
         <h3 class="font-bold text-brandRed flex items-center gap-2">
@@ -556,7 +556,7 @@
   </div>
 
   <!-- POP-UP PROFILE MODAL (name, email, address, phone, password, passkey) -->
-  <div x-show="showProfileModal" x-cloak class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div x-show="showProfileModal" x-cloak class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300" :class="showDesktopLogs ? 'lg:right-[400px]' : ''">
     <div class="bg-white rounded-xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col">
       <div class="bg-brandDark text-white p-4 flex items-center justify-between shrink-0">
         <h3 class="font-bold flex items-center gap-2">
@@ -669,7 +669,7 @@
   </div>
 
   <!-- POP-UP PASSKEY OFFER (shown after a step-up SMS verification) -->
-  <div x-show="showPasskeyOffer" x-cloak class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div x-show="showPasskeyOffer" x-cloak class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300" :class="showDesktopLogs ? 'lg:right-[400px]' : ''">
     <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full border border-slate-200 overflow-hidden text-center p-6">
       <div class="h-14 w-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
         <i data-lucide="check" class="h-7 w-7"></i>
@@ -689,7 +689,7 @@
   </div>
 
   <!-- POP-UP FLASH SALE (Bot Guard demo) -->
-  <div x-show="showFlashSaleModal" x-cloak class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  <div x-show="showFlashSaleModal" x-cloak class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300" :class="showDesktopLogs ? 'lg:right-[400px]' : ''">
     <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col">
       <div class="bg-brandDark text-white p-4 flex items-center justify-between shrink-0">
         <h3 class="font-bold flex items-center gap-2">
