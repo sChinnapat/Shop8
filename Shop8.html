@@ -60,7 +60,7 @@
   <header class="bg-brandDark text-white px-4 sm:px-6 py-3 flex items-center gap-3 sm:gap-4 border-b border-slate-800 shadow-md">
     <!-- Logo -->
     <div class="bg-brandRed text-white font-extrabold text-xl px-3 py-1.5 rounded flex items-center justify-center tracking-tighter shrink-0">
-      <span>shop</span><span class="text-white bg-black/20 px-1 rounded ml-0.5">8</span>
+      <span>Shop</span><span class="text-white bg-black/20 px-1 rounded ml-0.5">8</span>
     </div>
 
     <!-- Search + Cart + Profile (grouped together, only once signed in) -->
@@ -78,6 +78,7 @@
           <i data-lucide="user" class="h-4 w-4"></i>
           <span class="hidden sm:inline" x-text="userSession.fullName ? userSession.fullName.split(' ')[0] : 'Account'"></span>
         </button>
+        <span class="hidden sm:inline text-xs text-slate-300" x-show="userSession.fullName" x-text="'Welcome, ' + userSession.fullName.split(' ')[0]"></span>
       </div>
     </template>
 
@@ -484,8 +485,7 @@
 
         <div class="space-y-1">
           <label class="block text-xs font-bold text-slate-700 uppercase">Email</label>
-          <input type="email" x-show="userSession.email" :value="userSession.email" disabled class="w-full border border-slate-200 bg-slate-50 rounded px-3 py-2 text-sm text-slate-500">
-          <input type="email" x-show="!userSession.email" x-model="profile.email" placeholder="you@example.com" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none">
+          <input type="email" x-model="profile.email" :disabled="!!userSession.email" :class="userSession.email ? 'bg-slate-50 text-slate-500 border-slate-200' : 'border-slate-300 focus:border-brandRed'" placeholder="you@example.com" class="w-full border rounded px-3 py-2 text-sm focus:outline-none">
         </div>
 
         <div class="space-y-1">
@@ -742,7 +742,8 @@
         products: [
           { id: 1, name: 'Shop8 Ergonomic Wireless Mouse', category: 'Accessories', desc: 'High precision silent mouse with customizable DPI.', price: 890, img: 'wireless_mouse.jpg', badge: null },
           { id: 2, name: 'Shop8 Gold VIP Annual Pass', category: 'Memberships', desc: 'Unlocks free express shipping and double points.', price: 4900, img: 'vip_gold_card.jpg', badge: null },
-          { id: 3, name: 'Apple iPhone 15 Pro Max', category: 'Electronics', desc: 'Premium titanium finish with our best-in-class protection for high-value orders.', price: 48900, img: 'iphone_15_pro.jpg', badge: 'Extra Protection Included' }
+          { id: 3, name: 'Apple iPhone 15 Pro Max', category: 'Electronics', desc: 'Premium titanium finish with our best-in-class protection for high-value orders.', price: 48900, img: 'iphone_15_pro.jpg', badge: 'Extra Protection Included' },
+          { id: 4, name: 'MacBook Air M5 13" 512GB', category: 'Electronics', desc: 'Ultra-thin and light, all-day battery life with our best-in-class protection for high-value orders.', price: 44900, img: 'macbook_air_m5.svg', badge: 'Extra Protection Included' }
         ],
 
         // Shopping Cart state
@@ -869,7 +870,7 @@
                 const c = rows[0];
                 if (c.address) this.shippingInfo.address = c.address;
                 if (c.phone && !this.userSession.phone) this.userSession.phone = c.phone;
-                if (c.email && !this.userSession.email) this.profile.email = c.email;
+                if (c.email && !this.profile.email) this.profile.email = c.email;
                 this.userSession.hasPasskey = !!c.has_passkey;
                 this.userSession.hasPassword = !!c.has_password;
               }
@@ -923,6 +924,7 @@
                 this.userSession.userId = user.userId || '';
                 this.userSession.userLogin = user.email || user.phone || 'Authenticated User';
                 this.userSession.email = user.email || '';
+                if (this.userSession.email) this.profile.email = this.userSession.email;
                 this.userSession.phone = user.phone || '';
                 this.userSession.fullName = user.name || '';
                 this.loadCustomerProfile(this.userSession.userId);
@@ -951,6 +953,7 @@
             this.userSession.userId = e.detail.user.userId;
             this.userSession.userLogin = e.detail.user.email || e.detail.user.phone || 'Authenticated User';
             this.userSession.email = e.detail.user.email || '';
+            if (this.userSession.email) this.profile.email = this.userSession.email;
             this.userSession.phone = e.detail.user.phone || '';
             this.userSession.fullName = e.detail.user.name || '';
             this.loadCustomerProfile(e.detail.user.userId);
@@ -1079,7 +1082,7 @@
         },
 
         hasEmail() {
-          return !!(this.userSession.email || this.profile.email.trim());
+          return !!this.profile.email.trim();
         },
 
         isProfileComplete() {
@@ -1189,6 +1192,7 @@
               this.userSession.userId = e.detail.user.userId;
               this.userSession.userLogin = e.detail.user.email || e.detail.user.phone || 'Authenticated User';
               this.userSession.email = e.detail.user.email || '';
+              if (this.userSession.email) this.profile.email = this.userSession.email;
               this.userSession.phone = e.detail.user.phone || '';
               this.userSession.fullName = e.detail.user.name || '';
               this.loadCustomerProfile(e.detail.user.userId);

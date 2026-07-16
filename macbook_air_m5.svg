@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#f1f5f9"/>
+  <rect x="90" y="90" width="220" height="140" rx="8" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
+  <rect x="100" y="100" width="200" height="120" rx="3" fill="#0f172a"/>
+  <path d="M60 232 L340 232 L322 254 L78 254 Z" fill="#cbd5e1" stroke="#94a3b8" stroke-width="2"/>
+  <rect x="190" y="238" width="20" height="6" rx="3" fill="#94a3b8"/>
+  <text x="200" y="150" font-family="'Segoe UI', Arial, sans-serif" font-size="15" font-weight="700" fill="#ffffff" text-anchor="middle">MacBook Air</text>
+  <text x="200" y="172" font-family="'Segoe UI', Arial, sans-serif" font-size="13" fill="#94a3b8" text-anchor="middle">M5 · 13"</text>
+</svg>
