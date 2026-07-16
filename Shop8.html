@@ -83,10 +83,6 @@
         <i data-lucide="terminal" class="h-3.5 w-3.5"></i>
       </button>
 
-      <button @click="showConfig = true" title="Settings" class="flex items-center justify-center text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded border border-slate-700 transition">
-        <i data-lucide="settings" class="h-3.5 w-3.5"></i>
-      </button>
-
       <template x-if="userSession.isLoggedIn">
         <div class="flex items-center gap-2 sm:gap-3">
           <button @click="showCartDrawer = true" class="relative p-2 hover:bg-slate-800 rounded-md transition">
@@ -99,6 +95,10 @@
           </button>
         </div>
       </template>
+
+      <button @click="showConfig = true" title="Settings" class="flex items-center justify-center text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded border border-slate-700 transition">
+        <i data-lucide="settings" class="h-3.5 w-3.5"></i>
+      </button>
     </div>
   </header>
 
@@ -389,9 +389,31 @@
 
         <!-- Flow ID input -->
         <div class="space-y-1">
-          <label class="block text-xs font-bold text-slate-700 uppercase">Descope Flow ID</label>
+          <label class="block text-xs font-bold text-slate-700 uppercase">Descope Flow ID (Sign Up / Log In)</label>
           <input type="text" x-model="tempConfig.flowId" placeholder="e.g. sign-up-or-in" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none">
           <span class="text-[10px] text-slate-400">Defaults to your main login flow.</span>
+        </div>
+
+        <!-- Sub-flow IDs (step-up, passkey, password, phone verify) -->
+        <div class="border-t border-slate-100 pt-4 space-y-4">
+          <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wide">Other Flows Used By Shop8</p>
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-slate-700 uppercase">Step-Up Flow ID</label>
+            <input type="text" x-model="tempConfig.stepUpFlowId" placeholder="e.g. step-up" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none">
+            <span class="text-[10px] text-slate-400">Runs on checkouts over 10,000 THB.</span>
+          </div>
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-slate-700 uppercase">Passkey Enrollment Flow ID</label>
+            <input type="text" x-model="tempConfig.passkeyFlowId" placeholder="e.g. enroll-passkey-strict" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-slate-700 uppercase">Set Password Flow ID</label>
+            <input type="text" x-model="tempConfig.passwordFlowId" placeholder="e.g. set-password-strict" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-slate-700 uppercase">Verify Phone Flow ID</label>
+            <input type="text" x-model="tempConfig.phoneVerifyFlowId" placeholder="e.g. verify-phone-strict" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none">
+          </div>
         </div>
 
         <!-- Supabase Project credentials for logs polling -->
@@ -672,6 +694,10 @@
         config: {
           projectId: 'P3GRdY0chO66O5Uv4XgsAZMWd3pD',
           flowId: 'sign-up-or-in',
+          stepUpFlowId: 'step-up',
+          passkeyFlowId: 'enroll-passkey-strict',
+          passwordFlowId: 'set-password-strict',
+          phoneVerifyFlowId: 'verify-phone-strict',
           supabaseUrl: 'https://jcmeqobxcetnvpypaarh.supabase.co',
           supabaseAnonKey: 'sb_publishable_ccxyvDY2f3IxzhjdGm7TnA_JIQGlu4S'
         },
@@ -679,6 +705,10 @@
         tempConfig: {
           projectId: 'P3GRdY0chO66O5Uv4XgsAZMWd3pD',
           flowId: 'sign-up-or-in',
+          stepUpFlowId: 'step-up',
+          passkeyFlowId: 'enroll-passkey-strict',
+          passwordFlowId: 'set-password-strict',
+          phoneVerifyFlowId: 'verify-phone-strict',
           supabaseUrl: 'https://jcmeqobxcetnvpypaarh.supabase.co',
           supabaseAnonKey: 'sb_publishable_ccxyvDY2f3IxzhjdGm7TnA_JIQGlu4S'
         },
@@ -935,7 +965,7 @@
           const container = document.getElementById(containerId);
           if (!container) return;
 
-          container.innerHTML = `<descope-wc project-id="${this.config.projectId}" flow-id="enroll-passkey-strict"></descope-wc>`;
+          container.innerHTML = `<descope-wc project-id="${this.config.projectId}" flow-id="${this.config.passkeyFlowId || 'enroll-passkey-strict'}"></descope-wc>`;
 
           const wc = container.querySelector('descope-wc');
           this.styleShadowElements(wc);
@@ -1068,7 +1098,7 @@
             const container = document.getElementById('descope-password-container');
             if (!container) return;
 
-            container.innerHTML = `<descope-wc project-id="${this.config.projectId}" flow-id="set-password-strict"></descope-wc>`;
+            container.innerHTML = `<descope-wc project-id="${this.config.projectId}" flow-id="${this.config.passwordFlowId || 'set-password-strict'}"></descope-wc>`;
 
             const wc = container.querySelector('descope-wc');
             this.styleShadowElements(wc);
@@ -1091,7 +1121,7 @@
             const container = document.getElementById('descope-phone-container');
             if (!container) return;
 
-            container.innerHTML = `<descope-wc project-id="${this.config.projectId}" flow-id="verify-phone-strict"></descope-wc>`;
+            container.innerHTML = `<descope-wc project-id="${this.config.projectId}" flow-id="${this.config.phoneVerifyFlowId || 'verify-phone-strict'}"></descope-wc>`;
 
             const wc = container.querySelector('descope-wc');
             this.styleShadowElements(wc);
@@ -1114,7 +1144,7 @@
           const container = document.getElementById('descope-stepup-container');
           if (!container) return;
 
-          container.innerHTML = `<descope-wc project-id="${this.config.projectId}" flow-id="step-up"></descope-wc>`;
+          container.innerHTML = `<descope-wc project-id="${this.config.projectId}" flow-id="${this.config.stepUpFlowId || 'step-up'}"></descope-wc>`;
 
           const wc = container.querySelector('descope-wc');
           this.styleShadowElements(wc);
