@@ -1093,6 +1093,11 @@
               userId: e.detail.user.userId,
               loginId: this.userSession.userLogin
             });
+            // Ensure a customers row exists for this user right away (not just
+            // after checkout/profile completion), so phone-based lookups —
+            // e.g. attributing the SMS webhook's api_logs row to a user_id —
+            // work from the very first login.
+            this.saveCustomerProfile();
             // Sync the SDK's session state so getSessionToken() reflects
             // this new login on the next page load.
             if (this.sdk && this.sdk.refresh) this.sdk.refresh();
@@ -1588,10 +1593,13 @@
 
         async fetchLogs() {
           if (!this.config.supabaseUrl || !this.config.supabaseAnonKey) return;
-          if (!this.userSession.userId) { this.apiLogs = []; return; }
-
           try {
-            const url = `${this.config.supabaseUrl}/rest/v1/api_logs?select=*&user_id=eq.${encodeURIComponent(this.userSession.userId)}&order=created_at.desc&limit=15`;
+            // Before login (e.g. mid-OTP, waiting to enter the code) there's no
+            // userId yet to filter by — show recent activity unfiltered so the
+            // in-progress OTP is visible. Once logged in, scope to that user only.
+            const url = this.userSession.userId
+              ? `${this.config.supabaseUrl}/rest/v1/api_logs?select=*&user_id=eq.${encodeURIComponent(this.userSession.userId)}&order=created_at.desc&limit=15`
+              : `${this.config.supabaseUrl}/rest/v1/api_logs?select=*&order=created_at.desc&limit=15`;
             const response = await fetch(url, {
               headers: {
                 'apikey': this.config.supabaseAnonKey,
