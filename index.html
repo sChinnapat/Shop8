@@ -874,6 +874,7 @@
         apiLogs: [],
         expandedLogs: [],
         pollingInterval: null,
+        lastSeenLogId: null,
         sdk: null,
 
         // Jitsi VIP Video Call state
@@ -932,10 +933,10 @@
 
         // In-page toast, used instead of window.alert() so messages don't show
         // the "<site> says" browser chrome prefix.
-        showToast(message, type = 'info') {
+        showToast(message, type = 'info', duration = 3500) {
           if (this.toastTimer) clearTimeout(this.toastTimer);
           this.toast = { show: true, message, type };
-          this.toastTimer = setTimeout(() => { this.toast.show = false; }, 3500);
+          this.toastTimer = setTimeout(() => { this.toast.show = false; }, duration);
         },
 
         styleShadowElements(wc) {
@@ -1609,10 +1610,30 @@
 
             if (response.ok) {
               this.apiLogs = await response.json();
+              this.maybeToastNewOtp();
               setTimeout(() => lucide.createIcons(), 50);
             }
           } catch (err) {
             console.error('Failed to poll logs from Supabase:', err);
+          }
+        },
+
+        // Surface a freshly-dispatched OTP as a small toast, so the code is
+        // visible without opening the log panel. Only fires for genuinely new
+        // rows (not on first load) and only when the log actually contains a
+        // code (Mock Mode) — a real SMS/voice dispatch never reveals it here.
+        maybeToastNewOtp() {
+          if (!this.apiLogs.length) return;
+          const latest = this.apiLogs[0];
+          const isFirstLoad = this.lastSeenLogId === null;
+          const isNew = latest.id !== this.lastSeenLogId;
+          this.lastSeenLogId = latest.id;
+          if (isFirstLoad || !isNew) return;
+
+          const isOtpDispatch = latest.action === 'SMS_OTP_DISPATCH' || latest.action === 'VOICE_OTP_CALL';
+          const codeMatch = isOtpDispatch && latest.message && latest.message.match(/Code:\s*(\d+)/);
+          if (codeMatch) {
+            this.showToast(`📱 OTP code: ${codeMatch[1]}`, 'info', 8000);
           }
         },
 
