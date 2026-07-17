@@ -130,7 +130,7 @@
         <i data-lucide="terminal" class="h-3.5 w-3.5"></i>
       </button>
 
-      <button @click="showConfig = true" title="Settings" class="flex items-center justify-center text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded border border-slate-700 transition">
+      <button x-show="showSettingsButton" x-cloak @click="showConfig = true" title="Settings" class="flex items-center justify-center text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded border border-slate-700 transition">
         <i data-lucide="settings" class="h-3.5 w-3.5"></i>
       </button>
     </div>
@@ -778,6 +778,7 @@
         // App Configurations
         isConfigured: false,
         showConfig: false,
+        showSettingsButton: false,
         showStepUpModal: false,
         showPasskeyEnroll: false,
         showProfileModal: false,
@@ -896,6 +897,14 @@
             this.isConfigured = !!this.config.projectId && !!this.config.supabaseUrl;
             this.tempConfig = { ...this.config };
           }
+
+          // Dev-only settings access: hidden from regular visitors. Visiting once
+          // with ?dev=1 remembers it in this browser via localStorage, so it
+          // doesn't need to be retyped on every reload.
+          if (new URLSearchParams(window.location.search).get('dev') === '1') {
+            localStorage.setItem('shop8_dev_access', '1');
+          }
+          this.showSettingsButton = localStorage.getItem('shop8_dev_access') === '1';
 
           // Initialize the Descope Web JS SDK — used to check for an existing
           // valid session on load (persistTokens: true keeps it in browser
