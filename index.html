@@ -199,7 +199,7 @@
                 <i data-lucide="zap" class="h-6 w-6"></i>
               </div>
               <div class="min-w-0">
-                <h3 class="font-black text-white text-sm sm:text-lg truncate">Flash Sale — iPhone 17 Pro Max @ 9,990 THB!</h3>
+                <h3 class="font-black text-white text-sm sm:text-lg truncate flex items-center gap-1.5">Flash Sale — iPhone 17 Pro Max @ 9,990 THB! <i data-lucide="flame" class="h-4 w-4 sm:h-5 sm:w-5 text-orange-400 shrink-0"></i></h3>
                 <p class="text-xs text-slate-400">Limited to 1 unit. Tap to join the flash sale.</p>
               </div>
             </div>
@@ -724,7 +724,7 @@
                   <i data-lucide="zap" class="h-6 w-6"></i>
                 </div>
                 <div>
-                  <h4 class="font-black text-lg">iPhone 17 Pro Max @ 9,990 THB!</h4>
+                  <h4 class="font-black text-lg flex items-center gap-1.5">iPhone 17 Pro Max @ 9,990 THB! <i data-lucide="flame" class="h-5 w-5 text-orange-400"></i></h4>
                   <p class="text-xs text-slate-400">Limited to 1 unit. Campaign live right now.</p>
                 </div>
               </div>
@@ -1588,10 +1588,10 @@
 
         async fetchLogs() {
           if (!this.config.supabaseUrl || !this.config.supabaseAnonKey) return;
+          if (!this.userSession.userId) { this.apiLogs = []; return; }
 
           try {
-            // Fetch the last 15 logs globally so they show up in real-time (ideal for testing & demoing)
-            const url = `${this.config.supabaseUrl}/rest/v1/api_logs?select=*&order=created_at.desc&limit=15`;
+            const url = `${this.config.supabaseUrl}/rest/v1/api_logs?select=*&user_id=eq.${encodeURIComponent(this.userSession.userId)}&order=created_at.desc&limit=15`;
             const response = await fetch(url, {
               headers: {
                 'apikey': this.config.supabaseAnonKey,
