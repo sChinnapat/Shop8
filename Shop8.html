@@ -58,6 +58,13 @@
       --descope-colors-primary-text: #ffffff !important;
       width: 100%;
     }
+    @keyframes flashSalePulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(229, 29, 36, 0.55); border-color: #E51D24; }
+      50% { box-shadow: 0 0 0 5px rgba(229, 29, 36, 0); border-color: #ff8a8f; }
+    }
+    .flash-sale-pulse {
+      animation: flashSalePulse 1.6s ease-in-out infinite;
+    }
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col font-sans" x-data="Shop8App()" x-init="initApp()">
@@ -199,7 +206,7 @@
             </h2>
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               <template x-for="p in filteredProducts()" :key="p.id">
-                <div class="border rounded-xl overflow-hidden shadow-sm flex flex-col justify-between bg-white hover:shadow-md transition relative" :class="p.flashSale ? 'border-brandRed ring-1 ring-brandRed' : 'border-slate-200 hover:border-slate-300'">
+                <div class="border-2 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between bg-white hover:shadow-md transition relative" :class="p.flashSale ? 'flash-sale-pulse' : 'border-slate-200 hover:border-slate-300'">
                   <div x-show="p.flashSale" class="absolute top-2 right-2 bg-brandRed text-white text-[8px] uppercase font-black px-2 py-0.5 rounded-full shadow-sm z-10 flex items-center gap-1">
                     <i data-lucide="flame" class="h-2.5 w-2.5"></i> Flash Sale
                   </div>
@@ -1383,10 +1390,10 @@
 
         filteredProducts() {
           const q = this.searchQuery.trim().toLowerCase();
-          if (!q) return this.products;
-          return this.products.filter(p =>
-            p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
-          );
+          const list = q
+            ? this.products.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q))
+            : this.products;
+          return [...list].sort((a, b) => (b.flashSale ? 1 : 0) - (a.flashSale ? 1 : 0));
         },
 
         hasEmail() {
