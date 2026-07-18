@@ -65,6 +65,16 @@
     .flash-sale-pulse {
       animation: flashSalePulse 1.6s ease-in-out infinite;
     }
+    @keyframes addressShake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+    .animate-shake {
+      animation: addressShake 0.5s ease-in-out;
+    }
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col font-sans" x-data="Shop8App()" x-init="initApp()">
@@ -364,11 +374,11 @@
   </button>
 
   <!-- CART DRAWER -->
-  <div x-show="showCartDrawer" x-cloak class="fixed inset-0 bg-black/50 z-50 flex justify-end" @click.self="if (!editingCartAddress) showCartDrawer = false">
+  <div x-show="showCartDrawer" x-cloak class="fixed inset-0 bg-black/50 z-50 flex justify-end" @click.self="showCartDrawer = false">
     <div class="bg-white w-full max-w-sm h-full flex flex-col shadow-2xl">
       <div class="p-4 border-b border-slate-200 flex items-center justify-between shrink-0">
         <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="shopping-bag" class="text-brandRed h-5 w-5"></i> Shopping Cart</h3>
-        <button @click="if (!editingCartAddress) showCartDrawer = false" :disabled="editingCartAddress" class="text-slate-400 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed"><i data-lucide="x" class="h-5 w-5"></i></button>
+        <button @click="showCartDrawer = false" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="h-5 w-5"></i></button>
       </div>
       <div class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
         <template x-if="cart.length === 0">
@@ -402,23 +412,13 @@
           <span>High-value order — we'll quickly confirm it's really you before shipping.</span>
         </div>
 
-        <div class="space-y-1.5" x-show="cart.length > 0">
-          <div class="flex items-center justify-between">
-            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Shipping Address</label>
-            <button type="button" x-show="!editingCartAddress" @click="editingCartAddress = true" class="text-slate-400 hover:text-brandRed p-0.5" title="Edit address">
-              <i data-lucide="pencil" class="h-3 w-3"></i>
-            </button>
-          </div>
-          <template x-if="!editingCartAddress">
-            <p class="text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 leading-snug" x-text="shippingInfo.address.trim() || 'No address on file — tap the pencil to add one.'"></p>
-          </template>
-          <template x-if="editingCartAddress">
-            <div class="space-y-1.5">
-              <textarea x-model="shippingInfo.address" rows="2" autocomplete="off" placeholder="House no., street, sub-district, district, province, postal code" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-brandRed focus:outline-none"></textarea>
-              <p class="text-[10px] text-slate-400">Tap Save to keep this address — it won't be applied otherwise.</p>
-              <button type="button" @click="saveCustomerProfile(); editingCartAddress = false" class="w-full py-2 bg-brandRed hover:bg-red-700 text-white text-xs font-bold rounded-lg transition">Save Address</button>
-            </div>
-          </template>
+        <div class="space-y-1.5" x-show="cart.length > 0" x-ref="cartAddressBox">
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Shipping Address</label>
+          <textarea x-model="shippingInfo.address" rows="2" autocomplete="off" placeholder="House no., street, sub-district, district, province, postal code"
+                    class="w-full border rounded-lg px-3 py-2 text-xs focus:outline-none transition"
+                    :class="addressShake ? 'border-brandRed ring-2 ring-brandRed animate-shake' : 'border-slate-300 focus:border-brandRed'"
+                    @blur="saveCustomerProfile()"></textarea>
+          <p class="text-[10px] text-slate-400">Saved automatically when you click away.</p>
         </div>
 
         <div class="space-y-1.5" x-show="cart.length > 0">
@@ -438,9 +438,9 @@
           </template>
         </div>
 
-        <button @click="showCartDrawer = false; checkoutCart()" class="w-full py-3 text-white text-xs font-bold rounded-lg transition shadow-md flex items-center justify-center gap-2"
-                :class="(cart.length === 0 || editingCartAddress) ? 'bg-slate-300 cursor-not-allowed shadow-none' : 'bg-brandRed hover:bg-red-700'"
-                :disabled="cart.length === 0 || editingCartAddress">
+        <button @click="checkoutCart()" class="w-full py-3 text-white text-xs font-bold rounded-lg transition shadow-md flex items-center justify-center gap-2"
+                :class="cart.length === 0 ? 'bg-slate-300 cursor-not-allowed shadow-none' : 'bg-brandRed hover:bg-red-700'"
+                :disabled="cart.length === 0">
           <i data-lucide="credit-card" class="h-4 w-4"></i> Proceed to Checkout
         </button>
       </div>
@@ -708,6 +708,20 @@
     </div>
   </div>
 
+  <!-- POP-UP ORDER CONFIRMATION -->
+  <div x-show="showOrderConfirmModal" x-cloak class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300" :class="showDesktopLogs ? 'lg:right-[400px]' : ''">
+    <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full border border-slate-200 overflow-hidden text-center p-6">
+      <div class="h-16 w-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i data-lucide="party-popper" class="h-8 w-8"></i>
+      </div>
+      <h3 class="font-black text-slate-800 text-xl">Congratulations!</h3>
+      <p class="text-sm text-slate-500 mt-2 leading-relaxed">We'll send your order details for <span class="font-bold text-slate-700" x-text="orderConfirmItem.name"></span> (<span x-text="orderConfirmItem.price.toLocaleString() + ' THB'"></span>) to the Email or SMS you registered.</p>
+      <button @click="showOrderConfirmModal = false" class="mt-5 w-full py-3 bg-brandRed hover:bg-red-700 text-white font-bold rounded-lg text-sm transition">
+        Done
+      </button>
+    </div>
+  </div>
+
   <!-- POP-UP FLASH SALE (Bot Guard demo) -->
   <div x-show="showFlashSaleModal" x-cloak class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300" :class="showDesktopLogs ? 'lg:right-[400px]' : ''">
     <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col">
@@ -801,6 +815,9 @@
         showPasswordSetup: false,
         showPhoneVerify: false,
         showPasskeyOffer: false,
+        showOrderConfirmModal: false,
+        orderConfirmItem: { name: '', price: 0 },
+        addressShake: false,
         passkeyOfferStarted: false,
         showMobileLogs: false,
         showDesktopLogs: false,
@@ -891,7 +908,6 @@
           { id: 2, brand: 'Mastercard', last4: '8831', label: 'Mastercard •••• 8831', primary: false }
         ],
         selectedPaymentMethodId: 1,
-        editingCartAddress: false,
 
         // Flash Sale bot guard
         botGuardState: null, // 'checking', 'success'
@@ -971,6 +987,11 @@
           if (this.toastTimer) clearTimeout(this.toastTimer);
           this.toast = { show: true, message, type };
           this.toastTimer = setTimeout(() => { this.toast.show = false; }, duration);
+        },
+
+        showOrderConfirmation(name, price) {
+          this.orderConfirmItem = { name, price };
+          this.showOrderConfirmModal = true;
         },
 
         styleShadowElements(wc) {
@@ -1384,6 +1405,7 @@
             this.mountPasskeyFlow('descope-passkey-offer-container', () => {
               this.showPasskeyOffer = false;
               this.passkeyOfferStarted = false;
+              this.showOrderConfirmation(this.checkoutItem.name, this.checkoutItem.price);
             });
           }, 100);
         },
@@ -1391,6 +1413,7 @@
         skipPasskeyOffer() {
           this.showPasskeyOffer = false;
           this.passkeyOfferStarted = false;
+          this.showOrderConfirmation(this.checkoutItem.name, this.checkoutItem.price);
         },
 
         // Shopping Cart Methods
@@ -1447,10 +1470,22 @@
         checkoutCart() {
           if (this.cart.length === 0) return;
           if (this.isProfileComplete()) {
+            this.showCartDrawer = false;
             const total = this.getCartTotal();
             this.triggerCheckout('Cart Checkout', total);
-          } else {
+          } else if (!this.hasEmail()) {
+            // No email on file at all — the cart has no email field, so this
+            // still needs the full Profile modal.
+            this.showCartDrawer = false;
             this.openProfile('checkout');
+          } else {
+            // Only the address is missing — flash it right here instead of
+            // sending the user off to a separate modal.
+            this.addressShake = true;
+            setTimeout(() => { this.addressShake = false; }, 600);
+            if (this.$refs.cartAddressBox) {
+              this.$refs.cartAddressBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
           }
         },
 
@@ -1574,7 +1609,7 @@
             this.cart = []; // Empty the cart on success
             this.showStepUpModal = false;
             if (this.userSession.hasPasskey) {
-              this.showToast(`Verified! Your order for ${this.checkoutItem.name} (${this.checkoutItem.price.toLocaleString()} THB) is confirmed.`, 'success');
+              this.showOrderConfirmation(this.checkoutItem.name, this.checkoutItem.price);
             } else {
               setTimeout(() => { this.showPasskeyOffer = true; }, 200);
             }
@@ -1599,7 +1634,7 @@
             setTimeout(() => this.mountStepUpComponent(), 100);
           } else {
             // Low value checkout succeeds instantly
-            this.showToast(`Order placed! Thanks for shopping with us — your order is on its way.`, 'success');
+            this.showOrderConfirmation(name, price);
             this.logToSupabase('ORDER_PLACED', 'Order placed and confirmed', {
               loginId: this.userSession.userLogin,
               item: name,
