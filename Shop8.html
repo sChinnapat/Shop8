@@ -364,11 +364,11 @@
   </button>
 
   <!-- CART DRAWER -->
-  <div x-show="showCartDrawer" x-cloak class="fixed inset-0 bg-black/50 z-50 flex justify-end" @click.self="showCartDrawer = false">
+  <div x-show="showCartDrawer" x-cloak class="fixed inset-0 bg-black/50 z-50 flex justify-end" @click.self="if (!editingCartAddress) showCartDrawer = false">
     <div class="bg-white w-full max-w-sm h-full flex flex-col shadow-2xl">
       <div class="p-4 border-b border-slate-200 flex items-center justify-between shrink-0">
         <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="shopping-bag" class="text-brandRed h-5 w-5"></i> Shopping Cart</h3>
-        <button @click="showCartDrawer = false" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="h-5 w-5"></i></button>
+        <button @click="if (!editingCartAddress) showCartDrawer = false" :disabled="editingCartAddress" class="text-slate-400 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed"><i data-lucide="x" class="h-5 w-5"></i></button>
       </div>
       <div class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
         <template x-if="cart.length === 0">
@@ -415,7 +415,8 @@
           <template x-if="editingCartAddress">
             <div class="space-y-1.5">
               <textarea x-model="shippingInfo.address" rows="2" autocomplete="off" placeholder="House no., street, sub-district, district, province, postal code" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-brandRed focus:outline-none"></textarea>
-              <button type="button" @click="saveCustomerProfile(); editingCartAddress = false" class="text-xs font-bold text-brandRed hover:text-red-700">Save</button>
+              <p class="text-[10px] text-slate-400">Tap Save to keep this address — it won't be applied otherwise.</p>
+              <button type="button" @click="saveCustomerProfile(); editingCartAddress = false" class="w-full py-2 bg-brandRed hover:bg-red-700 text-white text-xs font-bold rounded-lg transition">Save Address</button>
             </div>
           </template>
         </div>
@@ -438,8 +439,8 @@
         </div>
 
         <button @click="showCartDrawer = false; checkoutCart()" class="w-full py-3 text-white text-xs font-bold rounded-lg transition shadow-md flex items-center justify-center gap-2"
-                :class="cart.length === 0 ? 'bg-slate-300 cursor-not-allowed shadow-none' : 'bg-brandRed hover:bg-red-700'"
-                :disabled="cart.length === 0">
+                :class="(cart.length === 0 || editingCartAddress) ? 'bg-slate-300 cursor-not-allowed shadow-none' : 'bg-brandRed hover:bg-red-700'"
+                :disabled="cart.length === 0 || editingCartAddress">
           <i data-lucide="credit-card" class="h-4 w-4"></i> Proceed to Checkout
         </button>
       </div>
@@ -582,7 +583,10 @@
       </div>
 
       <div class="p-6 space-y-4 overflow-y-auto">
-        <p class="text-xs text-slate-500" x-show="profileContext === 'checkout'">Please complete your profile before checking out — we'll only ask once.</p>
+        <div x-show="profileContext === 'checkout'" class="bg-red-50 border border-red-200 text-brandRed text-xs font-semibold rounded-lg px-3 py-2 flex items-start gap-2">
+          <i data-lucide="alert-triangle" class="h-4 w-4 shrink-0 mt-0.5"></i>
+          <span>Please fill in your delivery address before checking out — we'll only ask once.</span>
+        </div>
 
         <div class="space-y-1">
           <label class="block text-xs font-bold text-slate-700 uppercase">Full Name</label>
@@ -596,7 +600,9 @@
 
         <div class="space-y-1">
           <label class="block text-xs font-bold text-slate-700 uppercase">Delivery Address</label>
-          <textarea x-model="shippingInfo.address" rows="3" autocomplete="off" placeholder="House no., street, sub-district, district, province, postal code" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none"></textarea>
+          <textarea x-model="shippingInfo.address" rows="3" autocomplete="off" placeholder="House no., street, sub-district, district, province, postal code"
+                    class="w-full border rounded px-3 py-2 text-sm focus:outline-none"
+                    :class="profileContext === 'checkout' && !shippingInfo.address.trim() ? 'border-brandRed ring-1 ring-brandRed focus:border-brandRed' : 'border-slate-300 focus:border-brandRed'"></textarea>
         </div>
 
         <div class="space-y-1">
