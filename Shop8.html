@@ -201,9 +201,18 @@
 
           <!-- Product Grid -->
           <div>
-            <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <i data-lucide="store" class="text-brandRed"></i> All Products
-            </h2>
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <i data-lucide="store" class="text-brandRed"></i> All Products
+              </h2>
+              <div class="flex flex-wrap gap-1.5">
+                <template x-for="cat in productCategories()" :key="cat">
+                  <button @click="selectedCategory = cat" class="text-[10px] font-bold px-2.5 py-1 rounded-full border transition"
+                          :class="selectedCategory === cat ? 'bg-brandRed border-brandRed text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'"
+                          x-text="cat"></button>
+                </template>
+              </div>
+            </div>
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               <template x-for="p in filteredProducts()" :key="p.id">
                 <div class="border-2 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between bg-white hover:shadow-md transition relative" :class="p.flashSale ? 'flash-sale-pulse' : 'border-slate-200 hover:border-slate-300'">
@@ -791,6 +800,7 @@
         showCartDrawer: false,
         showFlashSaleModal: false,
         searchQuery: '',
+        selectedCategory: 'All',
         toast: { show: false, message: '', type: 'info' },
         toastTimer: null,
 
@@ -857,7 +867,11 @@
           { id: 5, name: 'Dell 27" 4K Monitor', category: 'Electronics', desc: 'Crisp 4K UHD display with our best-in-class protection for high-value orders.', price: 22000, img: 'dell_monitor_27_4k.webp', badge: 'Extra Protection Included' },
           { id: 6, name: 'Extended Mouse Pad', category: 'Accessories', desc: 'Large desk mat with a smooth, precise tracking surface.', price: 1000, img: 'fiio_mouse_pad.jpeg', badge: null },
           { id: 7, name: 'Blue Light Blocking Glasses', category: 'Accessories', desc: 'Reduces eye strain from screens during long work sessions.', price: 7800, img: 'blue_light_glasses.jpeg', badge: null },
-          { id: 8, name: 'Keychron K10 Mechanical Keyboard', category: 'Accessories', desc: 'Full-size hot-swappable mechanical keyboard with a clean, minimal look.', price: 3300, img: 'keychron_k10.webp', badge: null }
+          { id: 8, name: 'Keychron K10 Mechanical Keyboard', category: 'Accessories', desc: 'Full-size hot-swappable mechanical keyboard with a clean, minimal look.', price: 3300, img: 'keychron_k10.webp', badge: null },
+          { id: 9, name: 'Leather Name Card Holder', category: 'Accessories', desc: 'Premium leather card holder, fits about 9 business cards.', price: 200, img: 'name_card_holder.jpg', badge: null },
+          { id: 10, name: 'Matcha Kit', category: 'Lifestyle', desc: 'Full matcha-whisking set for brewing ceremonial-grade matcha at home.', price: 1500, img: 'matcha_kit.jpeg', badge: null },
+          { id: 11, name: 'Tumbler Glass 500mL', category: 'Lifestyle', desc: 'Insulated stainless steel tumbler, keeps drinks hot or cold for hours.', price: 800, img: 'tumbler_glass.jpeg', badge: null },
+          { id: 12, name: 'Color Pen Set', category: 'Accessories', desc: 'Set of colorful pens for notes, planning, and sketching.', price: 155, img: 'color_pen_set.avif', badge: null }
         ],
 
         // Shopping Cart state
@@ -1388,11 +1402,18 @@
           return this.cart.reduce((sum, item) => sum + item.qty, 0);
         },
 
+        productCategories() {
+          return ['All', ...new Set(this.products.map(p => p.category))];
+        },
+
         filteredProducts() {
           const q = this.searchQuery.trim().toLowerCase();
-          const list = q
-            ? this.products.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q))
-            : this.products;
+          let list = this.selectedCategory === 'All'
+            ? this.products
+            : this.products.filter(p => p.category === this.selectedCategory);
+          if (q) {
+            list = list.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+          }
           return [...list].sort((a, b) => (b.flashSale ? 1 : 0) - (a.flashSale ? 1 : 0));
         },
 
