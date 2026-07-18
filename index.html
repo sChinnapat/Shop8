@@ -1686,9 +1686,12 @@
           try {
             // Before login (e.g. mid-OTP, waiting to enter the code) there's no
             // userId yet to filter by — show recent activity unfiltered so the
-            // in-progress OTP is visible. Once logged in, scope to that user only.
+            // in-progress OTP is visible. Once logged in, scope to that user's
+            // own logs, plus any not-yet-attributed dispatch (e.g. OTP for a
+            // phone being verified for the first time, before the webhook can
+            // match it to a customer record).
             const url = this.userSession.userId
-              ? `${this.config.supabaseUrl}/rest/v1/api_logs?select=*&user_id=eq.${encodeURIComponent(this.userSession.userId)}&order=created_at.desc&limit=15`
+              ? `${this.config.supabaseUrl}/rest/v1/api_logs?select=*&or=(user_id.eq.${encodeURIComponent(this.userSession.userId)},user_id.is.null)&order=created_at.desc&limit=15`
               : `${this.config.supabaseUrl}/rest/v1/api_logs?select=*&order=created_at.desc&limit=15`;
             const response = await fetch(url, {
               headers: {
@@ -1721,8 +1724,18 @@
 
           const isOtpDispatch = latest.action === 'SMS_OTP_DISPATCH' || latest.action === 'VOICE_OTP_CALL';
           const codeMatch = isOtpDispatch && latest.message && latest.message.match(/Code:\s*(\d+)/);
-          if (codeMatch) {
+          if (!codeMatch) return;
+
+          if (latest.user_id) {
+            // Attributed to the current user (query only returns their own
+            // rows or unattributed ones) — no need to spell out the number.
             this.showToast(`📱 OTP code: ${codeMatch[1]}`, 'info', 8000);
+          } else {
+            // Not yet attributable to any account (e.g. first-time phone
+            // verification) — visible to anyone polling, so label the number.
+            const phoneMatch = latest.message.match(/to\s+(\+?\d+)/);
+            const phoneLabel = phoneMatch ? phoneMatch[1] : 'unknown number';
+            this.showToast(`📱 OTP for ${phoneLabel}: ${codeMatch[1]}`, 'info', 8000);
           }
         },
 
