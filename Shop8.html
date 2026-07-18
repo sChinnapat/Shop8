@@ -130,7 +130,7 @@
         <i data-lucide="terminal" class="h-3.5 w-3.5"></i>
       </button>
 
-      <button @click="showConfig = true" title="Settings" class="flex items-center justify-center text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded border border-slate-700 transition">
+      <button x-show="showSettingsButton" x-cloak @click="showConfig = true" title="Settings" class="flex items-center justify-center text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded border border-slate-700 transition">
         <i data-lucide="settings" class="h-3.5 w-3.5"></i>
       </button>
     </div>
@@ -192,20 +192,6 @@
         <!-- STOREFRONT VIEW (shown once signed in) -->
         <div x-show="userSession.isLoggedIn" x-cloak class="space-y-6">
 
-          <!-- Flash Sale promo banner -->
-          <button @click="showFlashSaleModal = true" class="w-full text-left bg-gradient-to-r from-brandDark to-slate-800 rounded-xl p-4 sm:p-5 flex items-center justify-between shadow-md hover:shadow-lg transition group">
-            <div class="flex items-center gap-4 min-w-0">
-              <div class="bg-brandRed text-white p-3 rounded-lg animate-pulse shrink-0">
-                <i data-lucide="zap" class="h-6 w-6"></i>
-              </div>
-              <div class="min-w-0">
-                <h3 class="font-black text-white text-sm sm:text-lg truncate">Flash Sale — iPhone 17 Pro Max @ 9,990 THB!</h3>
-                <p class="text-xs text-slate-400">Limited to 1 unit. Tap to join the flash sale.</p>
-              </div>
-            </div>
-            <i data-lucide="chevron-right" class="h-5 w-5 text-slate-400 group-hover:text-white transition shrink-0"></i>
-          </button>
-
           <!-- Product Grid -->
           <div>
             <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
@@ -213,8 +199,11 @@
             </h2>
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               <template x-for="p in filteredProducts()" :key="p.id">
-                <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between bg-white hover:border-slate-300 hover:shadow-md transition relative">
-                  <div x-show="p.badge" class="absolute top-2 right-2 bg-brandRed text-white text-[8px] uppercase font-black px-2 py-0.5 rounded-full shadow-sm z-10" x-text="p.badge"></div>
+                <div class="border rounded-xl overflow-hidden shadow-sm flex flex-col justify-between bg-white hover:shadow-md transition relative" :class="p.flashSale ? 'border-brandRed ring-1 ring-brandRed' : 'border-slate-200 hover:border-slate-300'">
+                  <div x-show="p.flashSale" class="absolute top-2 right-2 bg-brandRed text-white text-[8px] uppercase font-black px-2 py-0.5 rounded-full shadow-sm z-10 flex items-center gap-1">
+                    <i data-lucide="flame" class="h-2.5 w-2.5"></i> Flash Sale
+                  </div>
+                  <div x-show="p.badge && !p.flashSale" class="absolute top-2 right-2 bg-brandRed text-white text-[8px] uppercase font-black px-2 py-0.5 rounded-full shadow-sm z-10" x-text="p.badge"></div>
                   <div class="h-32 sm:h-40 w-full bg-slate-100 overflow-hidden flex items-center justify-center">
                     <img :src="p.img" :alt="p.name" class="h-full w-full object-cover">
                   </div>
@@ -227,8 +216,11 @@
                     <p class="text-lg font-black text-brandRed mt-3" x-text="p.price.toLocaleString() + ' THB'"></p>
                   </div>
                   <div class="p-3 sm:p-4 bg-slate-50 border-t border-slate-100">
-                    <button @click="addToCart(p.name, p.price, p.img)" class="w-full bg-brandDark hover:bg-slate-800 text-white text-xs font-bold py-2 rounded-md transition flex items-center justify-center gap-1.5">
+                    <button x-show="!p.flashSale" @click="addToCart(p.name, p.price, p.img)" class="w-full bg-brandDark hover:bg-slate-800 text-white text-xs font-bold py-2 rounded-md transition flex items-center justify-center gap-1.5">
                       <i data-lucide="shopping-cart" class="h-3.5 w-3.5"></i> Add To Cart
+                    </button>
+                    <button x-show="p.flashSale" @click="showFlashSaleModal = true" class="w-full bg-brandRed hover:bg-red-700 text-white text-xs font-bold py-2 rounded-md transition flex items-center justify-center gap-1.5">
+                      <i data-lucide="zap" class="h-3.5 w-3.5"></i> Buy Now (Verified)
                     </button>
                   </div>
                 </div>
@@ -405,7 +397,7 @@
           </template>
           <template x-if="editingCartAddress">
             <div class="space-y-1.5">
-              <textarea x-model="shippingInfo.address" rows="2" placeholder="House no., street, sub-district, district, province, postal code" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-brandRed focus:outline-none"></textarea>
+              <textarea x-model="shippingInfo.address" rows="2" autocomplete="off" placeholder="House no., street, sub-district, district, province, postal code" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-brandRed focus:outline-none"></textarea>
               <button type="button" @click="saveCustomerProfile(); editingCartAddress = false" class="text-xs font-bold text-brandRed hover:text-red-700">Save</button>
             </div>
           </template>
@@ -485,6 +477,11 @@
           <div class="space-y-1">
             <label class="block text-xs font-bold text-slate-700 uppercase">Verify Phone Flow ID</label>
             <input type="text" x-model="tempConfig.phoneVerifyFlowId" placeholder="e.g. verify-phone-strict" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-slate-700 uppercase">Bot Guard Flow ID</label>
+            <input type="text" x-model="tempConfig.botGuardFlowId" placeholder="e.g. flash-sale-bot-guard" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none">
+            <span class="text-[10px] text-slate-400">Runs a real reCAPTCHA v3 check on Flash Sale "Buy Now".</span>
           </div>
         </div>
 
@@ -582,7 +579,7 @@
 
         <div class="space-y-1">
           <label class="block text-xs font-bold text-slate-700 uppercase">Delivery Address</label>
-          <textarea x-model="shippingInfo.address" rows="3" placeholder="House no., street, sub-district, district, province, postal code" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none"></textarea>
+          <textarea x-model="shippingInfo.address" rows="3" autocomplete="off" placeholder="House no., street, sub-district, district, province, postal code" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none"></textarea>
         </div>
 
         <div class="space-y-1">
@@ -695,7 +692,7 @@
         <h3 class="font-bold flex items-center gap-2">
           <i data-lucide="zap" class="text-brandRed h-5 w-5"></i> Flash Sale
         </h3>
-        <button @click="showFlashSaleModal = false" class="text-slate-400 hover:text-white">
+        <button @click="showFlashSaleModal = false; botGuardState = null" class="text-slate-400 hover:text-white">
           <i data-lucide="x" class="h-5 w-5"></i>
         </button>
       </div>
@@ -706,26 +703,11 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
           <!-- Left Controls -->
           <div class="space-y-6">
-            <div class="bg-slate-50 p-5 rounded-xl border border-slate-100 space-y-4">
-              <h3 class="font-bold text-slate-800 text-sm">Select Buyer Simulation Mode</h3>
-
-              <div class="grid grid-cols-2 gap-3">
-                <button @click="botSimMode = 'human'" class="py-3 px-4 rounded-lg border text-sm font-bold transition flex flex-col items-center gap-2 text-center"
-                        :class="botSimMode === 'human' ? 'border-brandRed bg-red-50 text-brandRed' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'">
-                  <i data-lucide="user" class="h-6 w-6"></i>
-                  <span>Real Human User</span>
-                </button>
-                <button @click="botSimMode = 'bot'" class="py-3 px-4 rounded-lg border text-sm font-bold transition flex flex-col items-center gap-2 text-center"
-                        :class="botSimMode === 'bot' ? 'border-brandRed bg-red-50 text-brandRed' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'">
-                  <i data-lucide="bot" class="h-6 w-6"></i>
-                  <span>Automated Script</span>
-                </button>
-              </div>
-
-              <div class="text-xs text-slate-500 leading-relaxed pt-2">
-                <p x-show="botSimMode === 'human'"><strong class="text-slate-700">Human Mode:</strong> Google reCAPTCHA computes a clean Risk Score (e.g. 0.9). Descope bypasses any verification screens and allows checkout instantly.</p>
-                <p x-show="botSimMode === 'bot'"><strong class="text-slate-700">Bot Mode:</strong> Telemetry detects head-less browser flags. Descope flags the request and forces a strict SMS OTP challenge via 8x8 to prove the user has a real, physical SIM card.</p>
-              </div>
+            <div class="bg-slate-50 p-5 rounded-xl border border-slate-100 space-y-2">
+              <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <i data-lucide="shield-check" class="h-4 w-4 text-brandRed"></i> Real Bot Guard, Live
+              </h3>
+              <p class="text-xs text-slate-500 leading-relaxed">Every "Buy Now" click runs a real Google reCAPTCHA v3 check through a live Descope flow. Low-risk traffic checks out instantly; anything that scores as suspicious gets routed into a real SMS OTP / Passkey challenge before the purchase is allowed.</p>
             </div>
 
             <div class="border border-slate-100 rounded-xl overflow-hidden bg-slate-900 text-white p-5 flex items-center justify-between shadow">
@@ -734,11 +716,11 @@
                   <i data-lucide="zap" class="h-6 w-6"></i>
                 </div>
                 <div>
-                  <h4 class="font-black text-lg">iPhone 17 Pro Max @ 9,990 THB!</h4>
+                  <h4 class="font-black text-lg flex items-center gap-1.5">iPhone 17 Pro Max @ 9,990 THB! <i data-lucide="flame" class="h-5 w-5 text-orange-400"></i></h4>
                   <p class="text-xs text-slate-400">Limited to 1 unit. Campaign live right now.</p>
                 </div>
               </div>
-              <button @click="runFlashSaleSim()" class="bg-brandRed hover:bg-red-700 text-white font-bold text-sm px-6 py-3 rounded-lg shadow-md transition shrink-0">
+              <button @click="triggerFlashSaleBuy()" :disabled="botGuardState === 'checking'" class="bg-brandRed hover:bg-red-700 disabled:opacity-50 text-white font-bold text-sm px-6 py-3 rounded-lg shadow-md transition shrink-0">
                 Buy Now
               </button>
             </div>
@@ -748,44 +730,32 @@
           <div class="border border-slate-200 rounded-xl p-6 bg-slate-50/50 flex flex-col justify-between min-h-[300px]">
             <div>
               <h3 class="font-bold text-slate-800 text-sm">Security Gateway Decision Screen</h3>
-              <p class="text-xs text-slate-500 mt-1">Real-time risk scoring evaluation via Descope flow rules:</p>
+              <p class="text-xs text-slate-500 mt-1">Live reCAPTCHA v3 check via a real Descope flow:</p>
             </div>
 
-            <div class="flex-1 flex flex-col justify-center items-center py-6">
-              <div x-show="!flashSimState" class="text-center text-slate-400">
+            <div class="flex-1 flex flex-col justify-center items-center py-2 w-full">
+              <div x-show="!botGuardState" class="text-center text-slate-400">
                 <i data-lucide="play" class="h-12 w-12 mx-auto mb-2 text-slate-300"></i>
-                <p class="text-sm font-medium">Click "Buy Now" to run simulation</p>
+                <p class="text-sm font-medium">Click "Buy Now" to run the check</p>
               </div>
 
-              <div x-show="flashSimState === 'running'" class="text-center">
-                <div class="h-10 w-10 border-4 border-brandRed border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                <p class="text-sm font-bold text-slate-700">Evaluating client telemetry...</p>
-                <p class="text-xs text-slate-400 mt-1">Analyzing mouse inputs & headers</p>
+              <div x-show="botGuardState === 'checking'" class="w-full">
+                <div id="descope-botguard-container" class="w-full"></div>
               </div>
 
-              <div x-show="flashSimState === 'human_success'" x-cloak class="text-center">
+              <div x-show="botGuardState === 'success'" x-cloak class="text-center">
                 <div class="h-14 w-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
                   <i data-lucide="check" class="h-8 w-8"></i>
                 </div>
                 <h4 class="font-bold text-emerald-800 text-lg">Purchase Order Created!</h4>
-                <p class="text-xs text-slate-600 mt-1">reCAPTCHA Score: <span class="font-bold">0.95 (Low Risk)</span></p>
-                <span class="mt-3 inline-block bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded">Bypassed Verification</span>
-              </div>
-
-              <div x-show="flashSimState === 'bot_intercept'" x-cloak class="text-center max-w-sm">
-                <div class="h-14 w-14 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <i data-lucide="shield-alert" class="h-8 w-8"></i>
-                </div>
-                <h4 class="font-bold text-amber-800 text-lg">Suspicious Access Blocked</h4>
-                <p class="text-xs text-slate-600 mt-1">reCAPTCHA Score: <span class="font-bold">0.12 (High Risk / Bot)</span></p>
-                <p class="text-xs text-amber-700 mt-2">Descope Flow automatically intercepted the script and triggered a step-up SMS OTP via 8x8 to verify physical SIM ownership.</p>
+                <span class="mt-3 inline-block bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded">Verified via Descope</span>
               </div>
             </div>
 
             <div class="border-t border-slate-200 pt-4 flex items-center justify-between text-xs text-slate-500">
               <span>Integrated Services:</span>
               <span class="font-semibold text-slate-700 flex items-center gap-1">
-                <span class="h-2 w-2 rounded-full bg-emerald-500"></span> Google reCAPTCHA Enterprise
+                <span class="h-2 w-2 rounded-full bg-emerald-500"></span> Google reCAPTCHA v3
               </span>
             </div>
           </div>
@@ -800,6 +770,7 @@
         // App Configurations
         isConfigured: false,
         showConfig: false,
+        showSettingsButton: false,
         showStepUpModal: false,
         showPasskeyEnroll: false,
         showProfileModal: false,
@@ -823,6 +794,7 @@
           passkeyFlowId: 'enroll-passkey-strict',
           passwordFlowId: 'set-password-strict',
           phoneVerifyFlowId: 'verify-phone-strict',
+          botGuardFlowId: 'flash-sale-bot-guard',
           supabaseUrl: 'https://jcmeqobxcetnvpypaarh.supabase.co',
           supabaseAnonKey: 'sb_publishable_ccxyvDY2f3IxzhjdGm7TnA_JIQGlu4S',
           jaasAppId: 'vpaas-magic-cookie-f83de88b64664d749a24fa77a5a7dcb8',
@@ -836,6 +808,7 @@
           passkeyFlowId: 'enroll-passkey-strict',
           passwordFlowId: 'set-password-strict',
           phoneVerifyFlowId: 'verify-phone-strict',
+          botGuardFlowId: 'flash-sale-bot-guard',
           supabaseUrl: 'https://jcmeqobxcetnvpypaarh.supabase.co',
           supabaseAnonKey: 'sb_publishable_ccxyvDY2f3IxzhjdGm7TnA_JIQGlu4S',
           jaasAppId: 'vpaas-magic-cookie-f83de88b64664d749a24fa77a5a7dcb8',
@@ -872,7 +845,7 @@
         products: [
           { id: 1, name: 'Shop8 Ergonomic Wireless Mouse', category: 'Accessories', desc: 'High precision silent mouse with customizable DPI.', price: 890, img: 'wireless_mouse.jpg', badge: null },
           { id: 2, name: 'Shop8 Gold VIP Annual Pass', category: 'Memberships', desc: 'Unlocks free express shipping and double points.', price: 4900, img: 'vip_gold_card.jpg', badge: null },
-          { id: 3, name: 'Apple iPhone 17 Pro Max', category: 'Electronics', desc: 'Premium titanium finish with our best-in-class protection for high-value orders.', price: 48900, img: 'iphone_15_pro.jpg', badge: 'Extra Protection Included' },
+          { id: 3, name: 'Apple iPhone 17 Pro Max', category: 'Electronics', desc: 'Flash sale price — protected by a live bot-guard check before checkout.', price: 9990, img: 'iphone_15_pro.jpg', badge: null, flashSale: true },
           { id: 4, name: 'MacBook Air M5 13" 512GB', category: 'Electronics', desc: 'Ultra-thin and light, all-day battery life with our best-in-class protection for high-value orders.', price: 44900, img: 'macbook_air_m5.jpg', badge: 'Extra Protection Included' }
         ],
 
@@ -887,14 +860,14 @@
         selectedPaymentMethodId: 1,
         editingCartAddress: false,
 
-        // Flash Sale mode
-        botSimMode: 'human',
-        flashSimState: null, // 'running', 'human_success', 'bot_intercept'
+        // Flash Sale bot guard
+        botGuardState: null, // 'checking', 'success'
 
         // Logging parameters
         apiLogs: [],
         expandedLogs: [],
         pollingInterval: null,
+        lastSeenLogId: null,
         sdk: null,
 
         // Jitsi VIP Video Call state
@@ -916,6 +889,14 @@
             this.isConfigured = !!this.config.projectId && !!this.config.supabaseUrl;
             this.tempConfig = { ...this.config };
           }
+
+          // Dev-only settings access: hidden from regular visitors. Visiting once
+          // with ?dev=1 remembers it in this browser via localStorage, so it
+          // doesn't need to be retyped on every reload.
+          if (new URLSearchParams(window.location.search).get('dev') === '1') {
+            localStorage.setItem('shop8_dev_access', '1');
+          }
+          this.showSettingsButton = localStorage.getItem('shop8_dev_access') === '1';
 
           // Initialize the Descope Web JS SDK — used to check for an existing
           // valid session on load (persistTokens: true keeps it in browser
@@ -953,10 +934,10 @@
 
         // In-page toast, used instead of window.alert() so messages don't show
         // the "<site> says" browser chrome prefix.
-        showToast(message, type = 'info') {
+        showToast(message, type = 'info', duration = 3500) {
           if (this.toastTimer) clearTimeout(this.toastTimer);
           this.toast = { show: true, message, type };
-          this.toastTimer = setTimeout(() => { this.toast.show = false; }, 3500);
+          this.toastTimer = setTimeout(() => { this.toast.show = false; }, duration);
         },
 
         styleShadowElements(wc) {
@@ -1114,6 +1095,11 @@
               userId: e.detail.user.userId,
               loginId: this.userSession.userLogin
             });
+            // Ensure a customers row exists for this user right away (not just
+            // after checkout/profile completion), so phone-based lookups —
+            // e.g. attributing the SMS webhook's api_logs row to a user_id —
+            // work from the very first login.
+            this.saveCustomerProfile();
             // Sync the SDK's session state so getSessionToken() reflects
             // this new login on the next page load.
             if (this.sdk && this.sdk.refresh) this.sdk.refresh();
@@ -1578,25 +1564,44 @@
           this.checkoutItem = { name: '', price: 0 };
         },
 
-        runFlashSaleSim() {
-          this.flashSimState = 'running';
+        triggerFlashSaleBuy() {
+          this.botGuardState = 'checking';
+          setTimeout(() => this.mountBotGuardComponent(), 100);
+        },
 
-          setTimeout(() => {
-            if (this.botSimMode === 'human') {
-              this.flashSimState = 'human_success';
-            } else {
-              this.flashSimState = 'bot_intercept';
-            }
+        mountBotGuardComponent() {
+          const container = document.getElementById('descope-botguard-container');
+          if (!container) return;
+
+          container.innerHTML = `<descope-wc project-id="${this.config.projectId}" flow-id="${this.config.botGuardFlowId || 'flash-sale-bot-guard'}"></descope-wc>`;
+
+          const wc = container.querySelector('descope-wc');
+          this.styleShadowElements(wc);
+
+          wc.addEventListener('success', () => {
+            this.botGuardState = 'success';
+            this.logToSupabase('FLASH_SALE_PURCHASE', 'Flash-sale purchase allowed after live bot-guard check', {
+              loginId: this.userSession.userLogin,
+              item: 'iPhone 17 Pro Max',
+              amount: 9990
+            });
             setTimeout(() => lucide.createIcons(), 50);
-          }, 1500);
+          });
+          wc.addEventListener('error', (e) => {
+            console.error('Bot guard check failed:', e.detail);
+            this.botGuardState = null;
+          });
         },
 
         async fetchLogs() {
           if (!this.config.supabaseUrl || !this.config.supabaseAnonKey) return;
-
           try {
-            // Fetch the last 15 logs globally so they show up in real-time (ideal for testing & demoing)
-            const url = `${this.config.supabaseUrl}/rest/v1/api_logs?select=*&order=created_at.desc&limit=15`;
+            // Before login (e.g. mid-OTP, waiting to enter the code) there's no
+            // userId yet to filter by — show recent activity unfiltered so the
+            // in-progress OTP is visible. Once logged in, scope to that user only.
+            const url = this.userSession.userId
+              ? `${this.config.supabaseUrl}/rest/v1/api_logs?select=*&user_id=eq.${encodeURIComponent(this.userSession.userId)}&order=created_at.desc&limit=15`
+              : `${this.config.supabaseUrl}/rest/v1/api_logs?select=*&order=created_at.desc&limit=15`;
             const response = await fetch(url, {
               headers: {
                 'apikey': this.config.supabaseAnonKey,
@@ -1606,10 +1611,30 @@
 
             if (response.ok) {
               this.apiLogs = await response.json();
+              this.maybeToastNewOtp();
               setTimeout(() => lucide.createIcons(), 50);
             }
           } catch (err) {
             console.error('Failed to poll logs from Supabase:', err);
+          }
+        },
+
+        // Surface a freshly-dispatched OTP as a small toast, so the code is
+        // visible without opening the log panel. Only fires for genuinely new
+        // rows (not on first load) and only when the log actually contains a
+        // code (Mock Mode) — a real SMS/voice dispatch never reveals it here.
+        maybeToastNewOtp() {
+          if (!this.apiLogs.length) return;
+          const latest = this.apiLogs[0];
+          const isFirstLoad = this.lastSeenLogId === null;
+          const isNew = latest.id !== this.lastSeenLogId;
+          this.lastSeenLogId = latest.id;
+          if (isFirstLoad || !isNew) return;
+
+          const isOtpDispatch = latest.action === 'SMS_OTP_DISPATCH' || latest.action === 'VOICE_OTP_CALL';
+          const codeMatch = isOtpDispatch && latest.message && latest.message.match(/Code:\s*(\d+)/);
+          if (codeMatch) {
+            this.showToast(`📱 OTP code: ${codeMatch[1]}`, 'info', 8000);
           }
         },
 
