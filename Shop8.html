@@ -416,9 +416,11 @@
           <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Shipping Address</label>
           <textarea x-model="shippingInfo.address" rows="2" autocomplete="off" placeholder="House no., street, sub-district, district, province, postal code"
                     class="w-full border rounded-lg px-3 py-2 text-xs focus:outline-none transition"
-                    :class="addressShake ? 'border-brandRed ring-2 ring-brandRed animate-shake' : 'border-slate-300 focus:border-brandRed'"
-                    @blur="saveCustomerProfile()"></textarea>
-          <p class="text-[10px] text-slate-400">Saved automatically when you click away.</p>
+                    :class="addressShake ? 'border-brandRed ring-2 ring-brandRed animate-shake' : 'border-slate-300 focus:border-brandRed'"></textarea>
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-[10px] text-slate-400">Changes only apply after you tap Save.</p>
+            <button type="button" @click="saveCustomerProfile()" class="shrink-0 px-3 py-1.5 bg-brandRed hover:bg-red-700 text-white text-xs font-bold rounded-lg transition">Save</button>
+          </div>
         </div>
 
         <div class="space-y-1.5" x-show="cart.length > 0">
