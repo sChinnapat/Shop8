@@ -804,6 +804,7 @@
         selectedCategory: 'All',
         toast: { show: false, message: '', type: 'info' },
         toastTimer: null,
+        profileSaveQueue: Promise.resolve(),
 
         config: {
           projectId: 'P3GRdY0chO66O5Uv4XgsAZMWd3pD',
@@ -1040,8 +1041,19 @@
           }
         },
 
-        // Save/update this customer's delivery info + passkey status for next visit
-        async saveCustomerProfile() {
+        // Save/update this customer's delivery info + passkey status for next visit.
+        // Chained through profileSaveQueue so calls that fire close together
+        // (e.g. the initial post-login save racing a checkout profile save)
+        // always hit Supabase in the order they were triggered — otherwise an
+        // earlier request carrying stale/empty fields can land after a later
+        // one and silently overwrite it (e.g. wipe out an address the user
+        // just typed and saved).
+        saveCustomerProfile() {
+          this.profileSaveQueue = this.profileSaveQueue.then(() => this._doSaveCustomerProfile());
+          return this.profileSaveQueue;
+        },
+
+        async _doSaveCustomerProfile() {
           if (!this.config.supabaseUrl || !this.config.supabaseAnonKey || !this.userSession.userId) return;
           try {
             const url = `${this.config.supabaseUrl}/rest/v1/customers?on_conflict=user_id`;
