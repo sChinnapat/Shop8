@@ -919,6 +919,7 @@
         expandedLogs: [],
         pollingInterval: null,
         lastSeenLogId: null,
+        lastSeenOtpLogId: null,
         sdk: null,
 
         // Jitsi VIP Video Call state
@@ -977,7 +978,8 @@
 
           // 2. Start logs polling
           this.fetchLogs();
-          this.pollingInterval = setInterval(() => this.fetchLogs(), 1500);
+          this.checkForOtpToast();
+          this.pollingInterval = setInterval(() => { this.fetchLogs(); this.checkForOtpToast(); }, 1500);
 
           // 3. Sync icons
           setTimeout(() => lucide.createIcons(), 500);
@@ -1702,7 +1704,6 @@
 
             if (response.ok) {
               this.apiLogs = await response.json();
-              this.maybeToastNewOtp();
               setTimeout(() => lucide.createIcons(), 50);
             }
           } catch (err) {
@@ -1711,31 +1712,48 @@
         },
 
         // Surface a freshly-dispatched OTP as a small toast, so the code is
-        // visible without opening the log panel. Only fires for genuinely new
-        // rows (not on first load) and only when the log actually contains a
-        // code (Mock Mode) — a real SMS/voice dispatch never reveals it here.
-        maybeToastNewOtp() {
-          if (!this.apiLogs.length) return;
-          const latest = this.apiLogs[0];
-          const isFirstLoad = this.lastSeenLogId === null;
-          const isNew = latest.id !== this.lastSeenLogId;
-          this.lastSeenLogId = latest.id;
-          if (isFirstLoad || !isNew) return;
+        // visible without opening the log panel. Deliberately NOT scoped by
+        // user_id (unlike fetchLogs/apiLogs, which power the private log
+        // panel) — the descope-sms-webhook edge function attributes a
+        // dispatch row by looking up which customer row has a matching
+        // phone number, and since test phone numbers get reused across many
+        // different accounts, that lookup often resolves to a stale, wrong
+        // user_id. Rather than trying to fix attribution perfectly, this
+        // just toasts whatever the single most recent OTP dispatch is —
+        // safe in this single-tester demo context, and matches the existing
+        // tolerance for showing unattributed rows to anyone polling.
+        async checkForOtpToast() {
+          if (!this.config.supabaseUrl || !this.config.supabaseAnonKey) return;
+          try {
+            const url = `${this.config.supabaseUrl}/rest/v1/api_logs?select=*&action=in.(SMS_OTP_DISPATCH,VOICE_OTP_CALL)&order=created_at.desc&limit=1`;
+            const response = await fetch(url, {
+              headers: {
+                'apikey': this.config.supabaseAnonKey,
+                'Authorization': `Bearer ${this.config.supabaseAnonKey}`
+              }
+            });
+            if (!response.ok) return;
+            const rows = await response.json();
+            if (!rows.length) return;
 
-          const isOtpDispatch = latest.action === 'SMS_OTP_DISPATCH' || latest.action === 'VOICE_OTP_CALL';
-          const codeMatch = isOtpDispatch && latest.message && latest.message.match(/Code:\s*(\d+)/);
-          if (!codeMatch) return;
+            const latest = rows[0];
+            const isFirstLoad = this.lastSeenOtpLogId === null;
+            const isNew = latest.id !== this.lastSeenOtpLogId;
+            this.lastSeenOtpLogId = latest.id;
+            if (isFirstLoad || !isNew) return;
 
-          if (latest.user_id) {
-            // Attributed to the current user (query only returns their own
-            // rows or unattributed ones) — no need to spell out the number.
-            this.showToast(`📱 OTP code: ${codeMatch[1]}`, 'info', 8000);
-          } else {
-            // Not yet attributable to any account (e.g. first-time phone
-            // verification) — visible to anyone polling, so label the number.
+            // Ignore stale rows seen right after a page load/reconnect gap.
+            const ageMs = Date.now() - new Date(latest.created_at).getTime();
+            if (ageMs > 30000) return;
+
+            const codeMatch = latest.message && latest.message.match(/Code:\s*(\d+)/);
+            if (!codeMatch) return;
+
             const phoneMatch = latest.message.match(/to\s+(\+?\d+)/);
-            const phoneLabel = phoneMatch ? phoneMatch[1] : 'unknown number';
+            const phoneLabel = phoneMatch ? phoneMatch[1] : 'your number';
             this.showToast(`📱 OTP for ${phoneLabel}: ${codeMatch[1]}`, 'info', 8000);
+          } catch (err) {
+            console.error('Failed to poll for OTP dispatch:', err);
           }
         },
 
