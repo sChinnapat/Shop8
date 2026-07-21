@@ -517,18 +517,7 @@
           </div>
         </div>
 
-        <!-- 8x8 Jitsi Meet / JaaS credentials -->
-        <div class="border-t border-slate-100 pt-4 space-y-4">
-          <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wide">8x8 JaaS Credentials</p>
-          <div class="space-y-1">
-            <label class="block text-xs font-bold text-slate-700 uppercase">JaaS App ID</label>
-            <input type="text" x-model="tempConfig.jaasAppId" placeholder="e.g. f83de88b64664d749a24fa77a5a7dcb8" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none">
-          </div>
-          <div class="space-y-1">
-            <label class="block text-xs font-bold text-slate-700 uppercase">JaaS Encoded JWT Token</label>
-            <textarea x-model="tempConfig.jaasJwt" rows="3" placeholder="Paste your 2-hour Encoded JWT token here..." class="w-full border border-slate-300 rounded px-3 py-2 text-[10px] focus:border-brandRed focus:outline-none font-mono resize-none"></textarea>
-          </div>
-        </div>
+
       </div>
 
       <!-- Sticky Footer Actions -->
@@ -933,7 +922,16 @@
           // 1. Load configuration from localStorage
           const savedConfig = localStorage.getItem('Shop8_config');
           if (savedConfig) {
-            this.config = JSON.parse(savedConfig);
+            try {
+              this.config = JSON.parse(savedConfig);
+              
+              // Automatically prune JaaS private credentials from storage to prevent expired token use
+              if (this.config.jaasJwt) delete this.config.jaasJwt;
+              if (this.config.jaasAppId) delete this.config.jaasAppId;
+              localStorage.setItem('Shop8_config', JSON.stringify(this.config));
+            } catch (err) {
+              console.error("Error parsing saved config:", err);
+            }
             this.isConfigured = !!this.config.projectId && !!this.config.supabaseUrl;
             this.tempConfig = { ...this.config };
           } else {
@@ -1272,7 +1270,7 @@
           }
         },
 
-        connectToJitsi(roomId, customerName) {
+        async connectToJitsi(roomId, customerName) {
           // Clean subscription
           if (this.realtimeSubscription) {
             this.realtimeSubscription.unsubscribe();
@@ -1283,7 +1281,44 @@
           const container = document.getElementById('shop8-jitsi-container');
           if (container) container.innerHTML = "";
 
-          let formattedAppId = this.config.jaasAppId || '';
+          const sbUrl = (this.config.supabaseUrl || "https://jcmeqobxcetnvpypaarh.supabase.co").replace(/\/$/, "");
+          const sbAnonKey = this.config.supabaseAnonKey || "sb_publishable_ccxyvDY2f3IxzhjdGm7TnA_JIQGlu4S";
+
+          // Fetch secure Jitsi JaaS JWT token dynamically from Supabase Edge Function
+          let jwtToken = "";
+          try {
+            const tokenResponse = await fetch(`${sbUrl}/functions/v1/get-jitsi-token`, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'apikey': sbAnonKey,
+                'Authorization': `Bearer ${sbAnonKey}`
+              },
+              body: JSON.stringify({
+                roomName: roomId,
+                userName: customerName,
+                userEmail: this.userSession.email || "",
+                isModerator: false // Customers enter as participants
+              })
+            });
+            const tokenData = await tokenResponse.json();
+            if (tokenData.token) {
+              jwtToken = tokenData.token;
+              console.log("Secure JWT fetched from Supabase Edge Function.");
+            } else if (tokenData.error) {
+              console.warn("Edge function token error:", tokenData.error);
+            }
+          } catch (tokenErr) {
+            console.error("Failed to fetch secure JWT from Edge Function:", tokenErr);
+          }
+
+          if (!jwtToken) {
+            this.showToast("Failed to fetch secure call token from backend.", "error");
+            this.showJitsiModal = false;
+            return;
+          }
+
+          let formattedAppId = this.config.jaasAppId || 'f83de88b64664d749a24fa77a5a7dcb8';
           if (!formattedAppId.startsWith("vpaas-magic-cookie-") && formattedAppId) {
             formattedAppId = "vpaas-magic-cookie-" + formattedAppId;
           }
@@ -1291,7 +1326,7 @@
           const domain = "8x8.vc";
           const options = {
             roomName: `${formattedAppId}/${roomId}`,
-            jwt: this.config.jaasJwt,
+            jwt: jwtToken,
             width: "100%",
             height: "100%",
             parentNode: document.querySelector('#shop8-jitsi-container'),
