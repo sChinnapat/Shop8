@@ -1233,9 +1233,10 @@
 
           // 1. Insert Call Queue request row into Supabase database
           try {
+            const queueName = `${this.userSession.fullName || 'VIP Customer'} | ${this.userSession.email || ''} | ${this.userSession.phone || ''}`;
             const { data, error } = await this.supabaseClient
               .from('call_queue')
-              .insert([{ room_id: randomRoomId, status: 'waiting', customer_name: customerName }])
+              .insert([{ room_id: randomRoomId, status: 'waiting', customer_name: queueName }])
               .select();
 
             if (error) throw error;
@@ -1255,7 +1256,10 @@
                   
                   // If Agent accepts the call, mount Jitsi!
                   if (updatedRow.status === 'active') {
-                    this.connectToJitsi(randomRoomId, customerName);
+                    // Extract clean customer name for Jitsi iframe display
+                    const parts = (updatedRow.customer_name || '').split(' | ');
+                    const cleanName = parts[0] || 'VIP Customer';
+                    this.connectToJitsi(randomRoomId, cleanName);
                   }
                 }
               )
