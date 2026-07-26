@@ -1190,7 +1190,7 @@
           const wc = container.querySelector('descope-wc');
           this.styleShadowElements(wc);
 
-          wc.addEventListener('success', (e) => {
+          wc.addEventListener('success', async (e) => {
             console.log('Login success:', e.detail);
             this.userSession.isLoggedIn = true;
             this.currentView = 'store';
@@ -1200,7 +1200,10 @@
             if (this.userSession.email) this.profile.email = this.userSession.email;
             this.userSession.phone = e.detail.user.phone || '';
             this.userSession.fullName = e.detail.user.name || '';
-            this.loadCustomerProfile(e.detail.user.userId);
+            // Await this before saving below, otherwise the save fires with
+            // shippingInfo.address still empty (load hasn't populated it yet)
+            // and silently wipes out the address that was saved last time.
+            await this.loadCustomerProfile(e.detail.user.userId);
             this.logToSupabase('LOGIN_SUCCESS', 'User signed up or logged in', {
               userId: e.detail.user.userId,
               loginId: this.userSession.userLogin
@@ -1685,7 +1688,7 @@
           const wc = container.querySelector('descope-wc');
           this.styleShadowElements(wc);
 
-          wc.addEventListener('success', (e) => {
+          wc.addEventListener('success', async (e) => {
             sessionStorage.removeItem('shop8_stepup_pending');
             if (e.detail && e.detail.user) {
               this.userSession.isLoggedIn = true;
@@ -1696,7 +1699,9 @@
               if (this.userSession.email) this.profile.email = this.userSession.email;
               this.userSession.phone = e.detail.user.phone || '';
               this.userSession.fullName = e.detail.user.name || '';
-              this.loadCustomerProfile(e.detail.user.userId);
+              // Await before the saveCustomerProfile() call below fires — same
+              // load-before-save ordering fix as the main login handler.
+              await this.loadCustomerProfile(e.detail.user.userId);
               if (this.sdk && this.sdk.refresh) this.sdk.refresh();
             }
             // Strip OAuth callback params left over from the redirect
