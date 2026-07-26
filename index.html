@@ -104,7 +104,7 @@
     </div>
 
     <!-- Search + Cart + Profile (grouped together, only once signed in) -->
-    <template x-if="userSession.isLoggedIn">
+    <template x-if="userSession.isLoggedIn && currentView === 'store'">
       <div class="flex items-center gap-2 sm:gap-3" x-cloak>
         <div class="hidden sm:block relative w-56 sm:w-72">
           <input type="text" x-model="searchQuery" placeholder="Search products..." class="w-full rounded-md pl-4 pr-10 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brandRed">
@@ -587,6 +587,10 @@
         <div class="min-h-[150px] flex items-center justify-center">
           <div id="descope-stepup-container" class="w-full"></div>
         </div>
+
+        <p class="text-[10px] text-slate-400 flex items-center justify-center gap-1">
+          <i data-lucide="shield-check" class="h-3 w-3"></i> Delivered via 8x8 SMS API
+        </p>
 
         <button @click="cancelCheckout()" class="mt-4 text-xs text-slate-500 hover:text-brandRed underline">
           Cancel & Return to Shop
