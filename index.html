@@ -1467,7 +1467,11 @@
           this.showCartDrawer = false;
           this.showConfig = false;
           this.showProfileModal = false;
-          setTimeout(() => lucide.createIcons(), 50);
+          this.showPasskeyEnroll = false;
+          this.showPhoneVerify = false;
+          this.showPasskeyOffer = false;
+          this.showOrderConfirmModal = false;
+          setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 100);
         },
 
         mountPasskeyFlow(containerId, onDone) {
