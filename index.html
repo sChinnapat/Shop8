@@ -99,7 +99,7 @@
   <!-- HEADER NAVIGATION -->
   <header class="bg-brandDark text-white px-4 sm:px-6 py-3 flex items-center gap-3 sm:gap-4 border-b border-slate-800 shadow-md">
     <!-- Logo -->
-    <div class="bg-brandRed text-white font-extrabold text-xl px-3 py-1.5 rounded flex items-center justify-center tracking-tighter shrink-0">
+    <div @click="goHome()" class="bg-brandRed text-white font-extrabold text-xl px-3 py-1.5 rounded flex items-center justify-center tracking-tighter shrink-0 cursor-pointer hover:bg-red-700 transition active:scale-95 duration-150 select-none">
       <span>Shop</span><span class="text-white bg-black/20 px-1 rounded ml-0.5">8</span>
     </div>
 
@@ -172,14 +172,12 @@
                 Configure Credentials Now
               </button>
             </div>
-          </div>
-        </div>
       </template>
 
       <div x-show="isConfigured">
 
-        <!-- AUTH VIEW (shown until the customer signs in) -->
-        <div x-show="!userSession.isLoggedIn" x-cloak class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <!-- LANDING VIEW (shown when not logged in, OR when logged in but currentView is 'landing') -->
+        <div x-show="!userSession.isLoggedIn || currentView === 'landing'" x-cloak class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div class="grid grid-cols-1 md:grid-cols-12">
 
             <!-- Left Banner -->
@@ -196,19 +194,55 @@
               </div>
             </div>
 
-            <!-- Right Login Form Wrapper -->
+            <!-- Right Column (Login Form Wrapper when not logged in, OR Welcome/Profile panel when logged in) -->
             <div class="md:col-span-7 p-8 flex flex-col justify-center bg-slate-50/50">
-              <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-md max-w-md mx-auto w-full relative">
+              
+              <!-- Case 1: Not logged in -> Show Descope Login Component -->
+              <div x-show="!userSession.isLoggedIn" class="bg-white p-6 rounded-xl border border-slate-200 shadow-md max-w-md mx-auto w-full relative">
                 <div class="min-h-[350px] flex flex-col justify-center">
                   <div id="descope-wc-container"></div>
                 </div>
               </div>
+
+              <!-- Case 2: Logged in -> Show Welcome Panel & Profile Button & Go to Store Button -->
+              <div x-show="userSession.isLoggedIn" x-cloak class="bg-white p-8 rounded-xl border border-slate-200 shadow-md max-w-md mx-auto w-full relative text-center space-y-6">
+                <!-- Profile button at top (เพิ่มปุ่ม profile เข้าไปด้านบน) -->
+                <div class="flex justify-end">
+                  <button @click="openProfile('menu')" class="flex items-center gap-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-1.5 rounded-full transition font-semibold border border-slate-200 shadow-sm">
+                    <i data-lucide="user" class="h-3.5 w-3.5 text-slate-500"></i> Profile Settings
+                  </button>
+                </div>
+
+                <!-- Welcome Message (wc-descope ทางขวามือเปลี่ยนเป็น Welcome to ชื่อเราก็ได้) -->
+                <div class="space-y-2">
+                  <div class="h-16 w-16 bg-red-50 text-brandRed rounded-full flex items-center justify-center mx-auto mb-2 border border-red-100 shadow-inner">
+                    <i data-lucide="shield-check" class="h-8 w-8"></i>
+                  </div>
+                  <h3 class="text-2xl font-black text-slate-800">Welcome to Shop8</h3>
+                  <p class="text-slate-600 text-sm font-semibold">
+                    Welcome, <span class="text-brandRed font-extrabold" x-text="userSession.fullName || userSession.userLogin"></span>
+                  </p>
+                  <p class="text-xs text-slate-400">Your session is secure and active.</p>
+                </div>
+
+                <!-- Go to Store Button -->
+                <div class="pt-4 border-t border-slate-100 space-y-3">
+                  <button @click="currentView = 'store'" class="w-full bg-brandRed hover:bg-red-700 text-white font-bold py-3 rounded-lg text-sm transition flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] active:scale-[0.98] duration-150">
+                    <i data-lucide="store" class="h-4.5 w-4.5"></i> Shop Products
+                  </button>
+                  
+                  <button @click="logoutUser()" class="w-full py-2 text-slate-400 hover:text-brandRed text-xs font-semibold transition">
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
 
-        <!-- STOREFRONT VIEW (shown once signed in) -->
-        <div x-show="userSession.isLoggedIn" x-cloak class="space-y-6">
+        <!-- STOREFRONT VIEW (shown once signed in and in store view) -->
+        <div x-show="userSession.isLoggedIn && currentView === 'store'" x-cloak class="space-y-6">
 
           <!-- Product Grid -->
           <div>
@@ -799,6 +833,7 @@
         isConfigured: false,
         showConfig: false,
         showSettingsButton: false,
+        currentView: 'landing',
         showStepUpModal: false,
         showPasskeyEnroll: false,
         showProfileModal: false,
@@ -967,6 +1002,7 @@
               this.cart = saved.cart || [];
               this.checkoutItem = saved.checkoutItem || { name: '', price: 0 };
             } catch (_) { /* corrupted state — fall through with defaults */ }
+            this.currentView = 'store';
             this.showStepUpModal = true;
             setTimeout(() => this.mountStepUpComponent(), 100);
           } else if (this.isConfigured) {
@@ -1129,12 +1165,14 @@
                 this.userSession.phone = user.phone || '';
                 this.userSession.fullName = user.name || '';
                 this.loadCustomerProfile(this.userSession.userId);
+                this.currentView = 'store';
                 return;
               }
             }
           } catch (err) {
             console.error('No existing session to restore:', err);
           }
+          this.currentView = 'landing';
           this.mountDescopeComponent();
         },
 
@@ -1151,6 +1189,7 @@
           wc.addEventListener('success', (e) => {
             console.log('Login success:', e.detail);
             this.userSession.isLoggedIn = true;
+            this.currentView = 'store';
             this.userSession.userId = e.detail.user.userId;
             this.userSession.userLogin = e.detail.user.email || e.detail.user.phone || 'Authenticated User';
             this.userSession.email = e.detail.user.email || '';
@@ -1407,7 +1446,21 @@
           this.profile.email = '';
           this.showPasskeyEnroll = false;
           this.showPhoneVerify = false;
+          this.currentView = 'landing';
           this.mountDescopeComponent();
+        },
+
+        goHome() {
+          if (!this.userSession.isLoggedIn) {
+            this.currentView = 'landing';
+            this.mountDescopeComponent();
+          } else {
+            this.currentView = 'landing';
+          }
+          this.showCartDrawer = false;
+          this.showConfig = false;
+          this.showProfileModal = false;
+          setTimeout(() => lucide.createIcons(), 50);
         },
 
         mountPasskeyFlow(containerId, onDone) {
@@ -1632,6 +1685,7 @@
             sessionStorage.removeItem('shop8_stepup_pending');
             if (e.detail && e.detail.user) {
               this.userSession.isLoggedIn = true;
+              this.currentView = 'store';
               this.userSession.userId = e.detail.user.userId;
               this.userSession.userLogin = e.detail.user.email || e.detail.user.phone || 'Authenticated User';
               this.userSession.email = e.detail.user.email || '';
