@@ -1569,40 +1569,25 @@
         startProductTour() {
           if (typeof window.driver === 'undefined') return;
           const { driver } = window.driver.js;
-
-          const steps = [
-            {
-              element: '#tourLogoHome',
-              popover: {
-                title: 'This is your home button',
-                description: 'The Shop8 logo always brings you back here, no matter where you are in the app.'
+          driver({
+            showProgress: true,
+            steps: [
+              {
+                element: '#tourLogoHome',
+                popover: {
+                  title: 'This is your home button',
+                  description: 'The Shop8 logo always brings you back here, no matter where you are in the app.'
+                }
+              },
+              {
+                element: '#tourLoginCard',
+                popover: {
+                  title: 'Login & registration, for everyone',
+                  description: 'Sign in with username & password, phone, passkey, Google, or Facebook. New here? Sign up the same way.'
+                }
               }
-            },
-            {
-              element: '#tourLoginCard',
-              popover: {
-                title: 'Login & registration, for everyone',
-                description: 'Sign in with username & password, phone, passkey, Google, or Facebook. New here? Sign up the same way.'
-              }
-            }
-          ];
-
-          // Descope's widget lives in a shadow root and ignores scripted
-          // clicks, so instead of auto-navigating to the Sign Up screen we
-          // just point at the real toggle and invite the presenter to click
-          // it themselves.
-          const signupLink = document.querySelector('descope-wc')?.shadowRoot?.getElementById('liToSignup');
-          if (signupLink) {
-            steps.push({
-              element: signupLink,
-              popover: {
-                title: 'New here? Start your sign up',
-                description: "Click this link yourself to see the sign-up form — phone, Google, or Facebook, no password required."
-              }
-            });
-          }
-
-          driver({ showProgress: true, steps }).drive();
+            ]
+          }).drive();
         },
 
         // Just-for-fun chat widget — canned auto-replies only, no real backend.
