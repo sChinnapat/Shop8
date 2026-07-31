@@ -429,10 +429,14 @@
     </div>
     <div class="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50" x-ref="chatScroll">
       <template x-for="(m, i) in chatMessages" :key="i">
-        <div class="flex" :class="m.from === 'user' ? 'justify-end' : 'justify-start'">
+        <div class="flex flex-col" :class="m.from === 'user' ? 'items-end' : 'items-start'">
           <div class="max-w-[80%] px-3 py-2 rounded-2xl text-xs leading-relaxed"
                :class="m.from === 'user' ? 'bg-brandRed text-white rounded-br-sm' : 'bg-white border border-slate-200 text-slate-700 rounded-bl-sm'"
                x-text="m.text"></div>
+          <button x-show="m.action === 'vip'" @click="startVIPVideoCall()"
+                  class="mt-1.5 flex items-center gap-1.5 text-[10px] bg-brandRed hover:bg-red-700 text-white font-extrabold px-3 py-1.5 rounded-full border border-red-500 hover:border-red-600 transition shadow-md">
+            <i data-lucide="video" class="h-3 w-3"></i> VIP Live Video
+          </button>
         </div>
       </template>
     </div>
@@ -1595,14 +1599,26 @@
           this.chatInput = '';
           this.scrollChatToBottom();
 
-          const replies = [
-            "Thanks for reaching out! Our team will get back to you shortly. 😊",
-            "Got it — noted! Is there anything else I can help with?",
-            "Appreciate the message! (This is just a demo chat, not a live agent.)"
-          ];
+          const lower = text.toLowerCase();
+          const isMissingOtpComplaint = lower.includes("didn't receive") || lower.includes("didnt receive") || lower.includes("did not receive");
+
           setTimeout(() => {
-            this.chatMessages.push({ from: 'bot', text: replies[Math.floor(Math.random() * replies.length)] });
+            if (isMissingOtpComplaint) {
+              this.chatMessages.push({
+                from: 'bot',
+                text: "Looks like your account is a VIP customer, and this seems like an important case — please contact us via VIP Live Video for immediate help.",
+                action: 'vip'
+              });
+            } else {
+              const replies = [
+                "Thanks for reaching out! Our team will get back to you shortly. 😊",
+                "Got it — noted! Is there anything else I can help with?",
+                "Appreciate the message! (This is just a demo chat, not a live agent.)"
+              ];
+              this.chatMessages.push({ from: 'bot', text: replies[Math.floor(Math.random() * replies.length)] });
+            }
             this.scrollChatToBottom();
+            setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
           }, 700);
         },
 
