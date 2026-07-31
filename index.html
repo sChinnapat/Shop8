@@ -589,7 +589,16 @@
           </div>
           <div class="space-y-1">
             <label class="block text-xs font-bold text-slate-700 uppercase">Supabase Anon Key</label>
-            <input type="password" x-model="tempConfig.supabaseAnonKey" placeholder="eyJhbG..." class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:border-brandRed focus:outline-none">
+            <div class="relative">
+              <input type="text" x-model="tempConfig.supabaseAnonKey" placeholder="eyJhbG..."
+                     :style="showSupabaseKey ? '' : '-webkit-text-security: disc; text-security: disc;'"
+                     autocomplete="off" data-lpignore="true" data-1p-ignore
+                     class="w-full border border-slate-300 rounded px-3 py-2 pr-10 text-sm focus:border-brandRed focus:outline-none">
+              <button type="button" @click="showSupabaseKey = !showSupabaseKey; $nextTick(() => lucide.createIcons())" tabindex="-1"
+                      class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <i :data-lucide="showSupabaseKey ? 'eye-off' : 'eye'" class="h-4 w-4"></i>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -983,6 +992,8 @@
 
         // Flash Sale bot guard
         botGuardState: null, // 'checking', 'success'
+
+        showSupabaseKey: false,
 
         // Fun/decorative chat widget — canned replies only, not a real channel
         showChatBox: false,
@@ -1558,25 +1569,40 @@
         startProductTour() {
           if (typeof window.driver === 'undefined') return;
           const { driver } = window.driver.js;
-          driver({
-            showProgress: true,
-            steps: [
-              {
-                element: '#tourLogoHome',
-                popover: {
-                  title: 'This is your home button',
-                  description: 'The Shop8 logo always brings you back here, no matter where you are in the app.'
-                }
-              },
-              {
-                element: '#tourLoginCard',
-                popover: {
-                  title: 'Login & registration, for everyone',
-                  description: 'Sign in with username & password, phone, passkey, Google, or Facebook. New here? Sign up the same way.'
-                }
+
+          const steps = [
+            {
+              element: '#tourLogoHome',
+              popover: {
+                title: 'This is your home button',
+                description: 'The Shop8 logo always brings you back here, no matter where you are in the app.'
               }
-            ]
-          }).drive();
+            },
+            {
+              element: '#tourLoginCard',
+              popover: {
+                title: 'Login & registration, for everyone',
+                description: 'Sign in with username & password, phone, passkey, Google, or Facebook. New here? Sign up the same way.'
+              }
+            }
+          ];
+
+          // Descope's widget lives in a shadow root and ignores scripted
+          // clicks, so instead of auto-navigating to the Sign Up screen we
+          // just point at the real toggle and invite the presenter to click
+          // it themselves.
+          const signupLink = document.querySelector('descope-wc')?.shadowRoot?.getElementById('liToSignup');
+          if (signupLink) {
+            steps.push({
+              element: signupLink,
+              popover: {
+                title: 'New here? Start your sign up',
+                description: "Click this link yourself to see the sign-up form — phone, Google, or Facebook, no password required."
+              }
+            });
+          }
+
+          driver({ showProgress: true, steps }).drive();
         },
 
         // Just-for-fun chat widget — canned auto-replies only, no real backend.
@@ -1607,7 +1633,9 @@
           const isMissingOtpComplaint = lower.includes("didn't receive") || lower.includes("didnt receive") || lower.includes("did not receive");
 
           setTimeout(() => {
-            if (isMissingOtpComplaint) {
+            if (text === 'clear all logs') {
+              this.chatMessages.push({ from: 'bot', text: 'Sir Yeser!!' });
+            } else if (isMissingOtpComplaint) {
               this.chatMessages.push({
                 from: 'bot',
                 text: "Looks like your account is a VIP customer, and this seems like an important case — please contact us via VIP Live Video for immediate help.",
