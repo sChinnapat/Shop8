@@ -24,6 +24,10 @@
   <!-- Supabase JS Client (used for real-time queue signaling) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+  <!-- Driver.js: first-visit product tour -->
+  <script src="https://cdn.jsdelivr.net/npm/driver.js@1/dist/driver.js.iife.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1/dist/driver.css">
+
   <script>
     tailwind.config = {
       theme: {
@@ -99,7 +103,7 @@
   <!-- HEADER NAVIGATION -->
   <header class="bg-brandDark text-white px-4 sm:px-6 py-3 flex items-center gap-3 sm:gap-4 border-b border-slate-800 shadow-md">
     <!-- Logo -->
-    <div @click="goHome()" class="bg-brandRed text-white font-extrabold text-xl px-3 py-1.5 rounded flex items-center justify-center tracking-tighter shrink-0 cursor-pointer hover:bg-red-700 transition active:scale-95 duration-150 select-none">
+    <div id="tourLogoHome" @click="goHome()" class="bg-brandRed text-white font-extrabold text-xl px-3 py-1.5 rounded flex items-center justify-center tracking-tighter shrink-0 cursor-pointer hover:bg-red-700 transition active:scale-95 duration-150 select-none">
       <span>Shop</span><span class="text-white bg-black/20 px-1 rounded ml-0.5">8</span>
     </div>
 
@@ -143,6 +147,10 @@
         <span class="h-2 w-2 rounded-full" :class="isConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'"></span>
         <span x-text="isConfigured ? 'Store Online' : 'Setup Required'"></span>
       </span>
+
+      <button x-show="!userSession.isLoggedIn" x-cloak @click="startProductTour()" title="Take a tour" class="flex items-center gap-1.5 text-[10px] sm:text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full border border-slate-700 transition">
+        <i data-lucide="sparkles" class="h-3.5 w-3.5"></i> <span class="hidden sm:inline">Take a Tour</span>
+      </button>
 
       <button @click="showDesktopLogs = !showDesktopLogs" title="Toggle API Logs" class="hidden lg:flex items-center justify-center text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded border border-slate-700 transition">
         <i data-lucide="terminal" class="h-3.5 w-3.5"></i>
@@ -198,7 +206,7 @@
             <div class="md:col-span-7 p-8 flex flex-col justify-center bg-slate-50/50">
               
               <!-- Case 1: Not logged in -> Show Descope Login Component -->
-              <div x-show="!userSession.isLoggedIn" class="bg-white p-6 rounded-xl border border-slate-200 shadow-md max-w-md mx-auto w-full relative">
+              <div id="tourLoginCard" x-show="!userSession.isLoggedIn" class="bg-white p-6 rounded-xl border border-slate-200 shadow-md max-w-md mx-auto w-full relative">
                 <div class="min-h-[350px] flex flex-col justify-center">
                   <div id="descope-wc-container"></div>
                 </div>
@@ -359,8 +367,13 @@
 
               <div class="text-slate-400 pb-2 border-b border-slate-900" x-text="log.message"></div>
 
+              <div class="flex items-center gap-1.5 pb-1">
+                <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded"
+                      :class="logSourceBadgeClass(log)" x-text="logSourceBadge(log)"></span>
+              </div>
+
               <div class="space-y-1">
-                <p class="text-amber-500 font-bold">← Webhook Received (from Descope):</p>
+                <p class="text-amber-500 font-bold" x-text="logSourceLabel(log)"></p>
                 <pre class="bg-slate-900 p-2 rounded text-slate-300 overflow-x-auto custom-scrollbar" x-text="JSON.stringify(log.payload.descope_received || log.payload.descope_payload || log.payload, null, 2)"></pre>
               </div>
 
@@ -397,15 +410,40 @@
 
   </main>
 
-  <!-- FLOATING CONSOLE TOGGLE BUTTON FOR MOBILE -->
-  <button @click="showMobileLogs = !showMobileLogs" class="lg:hidden fixed bottom-6 right-6 bg-brandRed text-white p-4 rounded-full shadow-lg z-30 flex items-center justify-center border border-red-500 hover:bg-red-700 transition">
-    <i data-lucide="terminal" class="h-6 w-6"></i>
+  <!-- FLOATING CHAT BUTTON (just for fun — canned auto-replies, not a real support channel) -->
+  <button @click="toggleChatBox()" x-show="!showChatBox" x-cloak class="fixed bottom-6 right-6 bg-brandRed text-white p-4 rounded-full shadow-lg z-30 flex items-center justify-center border border-red-500 hover:bg-red-700 transition">
+    <i data-lucide="message-circle" class="h-6 w-6"></i>
   </button>
 
-  <!-- FLOATING REOPEN BUTTON FOR DESKTOP LOGS -->
-  <button x-show="!showDesktopLogs" @click="showDesktopLogs = true" x-cloak class="hidden lg:flex fixed bottom-6 right-6 bg-slate-800 hover:bg-slate-700 text-slate-300 p-3 rounded-full shadow-lg z-30 items-center justify-center border border-slate-700 transition">
-    <i data-lucide="terminal" class="h-5 w-5"></i>
-  </button>
+  <!-- CHAT BOX -->
+  <div x-show="showChatBox" x-cloak x-transition
+       class="fixed bottom-6 right-6 z-30 w-[90vw] max-w-sm h-[420px] bg-white rounded-xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+    <div class="bg-brandDark text-white px-4 py-3 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-2">
+        <div class="h-2 w-2 rounded-full bg-emerald-400"></div>
+        <span class="font-bold text-sm">Shop8 Support</span>
+      </div>
+      <button @click="toggleChatBox()" class="opacity-70 hover:opacity-100">
+        <i data-lucide="x" class="h-4 w-4"></i>
+      </button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50" x-ref="chatScroll">
+      <template x-for="(m, i) in chatMessages" :key="i">
+        <div class="flex" :class="m.from === 'user' ? 'justify-end' : 'justify-start'">
+          <div class="max-w-[80%] px-3 py-2 rounded-2xl text-xs leading-relaxed"
+               :class="m.from === 'user' ? 'bg-brandRed text-white rounded-br-sm' : 'bg-white border border-slate-200 text-slate-700 rounded-bl-sm'"
+               x-text="m.text"></div>
+        </div>
+      </template>
+    </div>
+    <div class="p-2 border-t border-slate-200 flex items-center gap-2 shrink-0 bg-white">
+      <input type="text" x-model="chatInput" @keydown.enter="sendChatMessage()" placeholder="Type a message..."
+             class="flex-1 text-xs px-3 py-2 rounded-full border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brandRed">
+      <button @click="sendChatMessage()" class="bg-brandRed hover:bg-red-700 text-white p-2 rounded-full transition shrink-0">
+        <i data-lucide="send" class="h-3.5 w-3.5"></i>
+      </button>
+    </div>
+  </div>
 
   <!-- CART DRAWER -->
   <div x-show="showCartDrawer" x-cloak class="fixed inset-0 bg-black/50 z-50 flex justify-end" @click.self="showCartDrawer = false">
@@ -942,6 +980,11 @@
         // Flash Sale bot guard
         botGuardState: null, // 'checking', 'success'
 
+        // Fun/decorative chat widget — canned replies only, not a real channel
+        showChatBox: false,
+        chatMessages: [],
+        chatInput: '',
+
         // Logging parameters
         apiLogs: [],
         expandedLogs: [],
@@ -1081,6 +1124,40 @@
           } catch (err) {
             console.error('Failed to write log to Supabase:', err);
           }
+        },
+
+        // True origin of each log row, based on log.service — this used to
+        // hardcode "Webhook Received (from Descope)" for every row, which was
+        // wrong for two cases: rows written directly by this page (service:
+        // 'descope', e.g. LOGIN_SUCCESS) never touch a webhook at all, and
+        // delivery-status rows come from 8x8 calling us, not Descope.
+        logSourceLabel(log) {
+          const service = log.service || '';
+          if (service === 'descope') {
+            return '← Logged directly by Shop8 (browser), after a Descope SDK event:';
+          }
+          if (service.includes('Delivery Webhook')) {
+            return '← Webhook Received (from 8x8, delivery status):';
+          }
+          if (service.includes('8x8')) {
+            return '← Webhook Received (from Descope) → forwarded to 8x8:';
+          }
+          return '← Logged by Shop8:';
+        },
+
+        logSourceBadge(log) {
+          const service = log.service || '';
+          if (service === 'descope') return 'Browser → Supabase';
+          if (service.includes('Delivery Webhook')) return '8x8 → Supabase';
+          if (service.includes('8x8')) return 'Descope → Supabase → 8x8';
+          return 'Supabase';
+        },
+
+        logSourceBadgeClass(log) {
+          const service = log.service || '';
+          if (service === 'descope') return 'bg-purple-950 text-purple-300 border border-purple-900';
+          if (service.includes('8x8')) return 'bg-red-950 text-red-300 border border-red-900';
+          return 'bg-emerald-950 text-emerald-300 border border-emerald-900';
         },
 
         // Load this returning customer's saved delivery info + passkey status
@@ -1472,6 +1549,66 @@
           this.showPasskeyOffer = false;
           this.showOrderConfirmModal = false;
           setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 100);
+        },
+
+        startProductTour() {
+          if (typeof window.driver === 'undefined') return;
+          const { driver } = window.driver.js;
+          driver({
+            showProgress: true,
+            steps: [
+              {
+                element: '#tourLogoHome',
+                popover: {
+                  title: 'This is your home button',
+                  description: 'The Shop8 logo always brings you back here, no matter where you are in the app.'
+                }
+              },
+              {
+                element: '#tourLoginCard',
+                popover: {
+                  title: 'Sign in or sign up right here',
+                  description: 'Already have an account? Sign in. New to Shop8? The same form lets you sign up with your phone, Google, or Facebook.'
+                }
+              }
+            ]
+          }).drive();
+        },
+
+        // Just-for-fun chat widget — canned auto-replies only, no real backend.
+        toggleChatBox() {
+          this.showChatBox = !this.showChatBox;
+          if (this.showChatBox && this.chatMessages.length === 0) {
+            this.chatMessages.push({ from: 'bot', text: "👋 Hi! Welcome to Shop8 support." });
+            setTimeout(() => {
+              this.chatMessages.push({ from: 'bot', text: "How can I help you today?" });
+              this.scrollChatToBottom();
+            }, 500);
+          }
+          setTimeout(() => this.scrollChatToBottom(), 50);
+        },
+
+        sendChatMessage() {
+          const text = this.chatInput.trim();
+          if (!text) return;
+          this.chatMessages.push({ from: 'user', text });
+          this.chatInput = '';
+          this.scrollChatToBottom();
+
+          const replies = [
+            "Thanks for reaching out! Our team will get back to you shortly. 😊",
+            "Got it — noted! Is there anything else I can help with?",
+            "Appreciate the message! (This is just a demo chat, not a live agent.)"
+          ];
+          setTimeout(() => {
+            this.chatMessages.push({ from: 'bot', text: replies[Math.floor(Math.random() * replies.length)] });
+            this.scrollChatToBottom();
+          }, 700);
+        },
+
+        scrollChatToBottom() {
+          const el = this.$refs.chatScroll;
+          if (el) setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
         },
 
         mountPasskeyFlow(containerId, onDone) {
